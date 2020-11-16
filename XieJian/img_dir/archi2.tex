@@ -1,0 +1,16 @@
+\begin{tikzpicture}
+[
+    level distance=4cm,
+    level 1/.style={sibling distance=5cm},
+    level 2/.style={sibling distance=2.5cm},
+    level 3/.style={sibling distance=1cm},
+    every node/.style={shape=rectangle, rounded corners=.8ex, draw, fill = red!20},
+]
+\node(GPU) at (-3, 2){Train/Test Pod};
+\node(Ma) at (3, 2){Manager};
+\node(PVC) at (0, -2)[minimum width = 10cm, minimum height = 1cm]{Storage: PVC};
+\draw[->] (GPU) to[in=90,out=90] (Ma);
+\node at (0,4)[fill=white]{Query(Cond, Proj)};
+\draw[->] (Ma) to[in=-90,out=-90] (GPU);
+\node[fill=white]{ret:url list/data};
+\end{tikzpicture}

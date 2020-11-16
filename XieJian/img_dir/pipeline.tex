@@ -1,0 +1,20 @@
+\begin{tikzpicture}
+    [
+        level distance=4cm,
+        level 1/.style={sibling distance=5cm},
+        level 2/.style={sibling distance=2.5cm},
+        level 3/.style={sibling distance=1cm},
+        every node/.style={shape=rectangle, rounded corners=.8ex, draw, fill = red!20},
+        bigbox/.style={shape=rectangle, rounded corners=.8ex, draw, fill=blue!20, minimum, height=3cm, minimum width=9cm},
+    ]
+    
+    \node(task){define problem};
+    \node(code)[right=of task]{code};
+    \node(col) [right=of code]{collect data};
+    \node(test) [right=of col]{train and evaluate};
+    \draw[->] (task) to (code);
+    \draw[->] (code) to (col);
+    \draw[->] (col) to (test);
+    \draw[->] (test) to[out=90,in=90] (col);
+    \draw[->] (test) to[out=-90,in=-90] (code);
+    \end{tikzpicture}
