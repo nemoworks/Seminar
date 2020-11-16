@@ -1,0 +1,4 @@
+\beamer@sectionintoc {1}{Review}{3}{0}{1}
+\beamer@sectionintoc {2}{Data Collection}{7}{0}{2}
+\beamer@sectionintoc {3}{Case Study}{17}{0}{3}
+\beamer@sectionintoc {4}{Summary \& Future Work}{24}{0}{4}

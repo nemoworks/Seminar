@@ -1,0 +1,15 @@
+\frametitle{Automatically Extract Dependencies}
+    We developed a tool that can be used to extract a package's dependencies automatically.
+    \begin{lstlisting}
+        {
+            "name": "ajv",
+            "version": "6.6.2",
+            "parent": "antd-theme-generator@1.2.8"
+        },
+        {
+            "name": "ansi-styles",
+            "version": "3.2.1",
+            "parent": "antd-theme-generator@1.2.8"
+        },
+    \end{lstlisting}
+    The output is a list that each entry of the list contains the package name, the package version and its dependent.
