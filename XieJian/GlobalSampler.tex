@@ -325,24 +325,24 @@
     \begin{block}{steps}
         \begin{itemize}
             \item First, We randomly select an idx $i_1$ from the $S_1$.
-            \item If $i_1 \in S_2$， then we do nothing like solution 1
-            \item If $i_1 \notin S_2$， then we randomly select an idx $i_2$ from the $S_2-S_1$
+            \item If $i_1 \in S_i$， then $i_2 = i_1$
+            \item If $i_1 \notin S_i$， then we randomly select an idx $i_2$ from the $S_2-S_1$
         \end{itemize}
     \end{block}
 \end{frame}
 \begin{frame}
     \frametitle{Proving}
     \begin{block}{S1}
-        $p(idx_1) = \frac{1}{n}$
+        $p(i_1) = \frac{1}{n}$
     \end{block}
     \begin{block}{S2}
-        If $idx_2 \in S_i$, 
+        If $i_2 \in S_i$, 
         $$
-            p(idx_2) = \frac{n_i}{n}*\frac{1}{n_i} = \frac{1}{n}
+            p(i_2) = \frac{n_i}{n}*\frac{1}{n_i} = \frac{1}{n}
         $$
-        If $idx_2 \notin S_i$, 
+        If $i_2 \notin S_i$, 
         $$
-            p(idx_2) = \frac{n-n_i}{n}*\frac{1}{n-n_i} = \frac{1}{n}
+            p(i_2) = \frac{n-n_i}{n}*\frac{1}{n-n_i} = \frac{1}{n}
         $$
     \end{block}
 \end{frame}
@@ -362,28 +362,28 @@
     \frametitle{Solution 3}
     If we use Solution2.
     \begin{block}{S2}
-        If $idx_2 \in S_i$, 
+        If $i_2 \in S_i$, 
         $$
-            p(idx_2) = \frac{n_i}{n_1}*\frac{1}{n_i} = \frac{1}{n_1}
+            p(i_2) = \frac{n_i}{n_1}*\frac{1}{n_i} = \frac{1}{n_1}
         $$
-        If $idx_2 \notin S_i$, 
+        If $i_2 \notin S_i$, 
         $$
-            p(idx_2) = \frac{n_1-n_i}{n_1}*\frac{1}{n2-n_i} = \frac{n_1-n_i}{n_1*(n_2-n_i)}
+            p(i_2) = \frac{n_1-n_i}{n_1}*\frac{1}{n2-n_i} = \frac{n_1-n_i}{n_1*(n_2-n_i)}
         $$
     \end{block}
 \end{frame}
 
 \begin{frame}
     \frametitle{Solution 3}
-        if $n_1 < n_2$, then $p(idx_2 \in S_i) > \frac{1}{n_2}$. So in step 2 of Solution2, we should randomly select a idx in $S_2-S_i$ in probability of $x$.\\
+        if $n_1 < n_2$, then $p(i_2 \in S_i) > \frac{1}{n_2}$. So in step 2 of Solution2, we should randomly select a idx in $S_2-S_i$ in probability of $x$.\\
         \begin{block}
-        If $idx_2 \in S_i$, 
+        If $i_2 \in S_i$, 
         $$
-            p(idx_2) = \frac{n_i}{n_1}*(1-x)*\frac{1}{n_i} = \frac{1}{n_2}
+            p(i_2) = \frac{n_i}{n_1}*(1-x)*\frac{1}{n_i} = \frac{1}{n_2}
         $$
-        If $idx_2 \notin S_i$, 
+        If $i_2 \notin S_i$, 
         $$
-            p(idx_2') = \frac{n_1-n_i}{n_1}*\frac{1}{n2-n_i} + \frac{n_i}{n_1}*x*\frac{1}{n2-n_i} = \frac{1}{n_2}
+            p(i_2) = \frac{n_1-n_i}{n_1}*\frac{1}{n2-n_i} + \frac{n_i}{n_1}*x*\frac{1}{n2-n_i} = \frac{1}{n_2}
         $$
         then
         $$
@@ -394,15 +394,15 @@
 
 \begin{frame}
     \frametitle{Solution 3}
-        if $n_1 > n_2$, then $p(idx_2 \notin S_i) > \frac{1}{n_2}$. So in step 3 of Solution2, we should randomly select a idx in $S_i$ in probability of $x$.\\
+        if $n_1 > n_2$, then $p(i_2 \notin S_i) > \frac{1}{n_2}$. So in step 3 of Solution2, we should randomly select a idx in $S_i$ in probability of $x$.\\
         \begin{block}
-        If $idx_2 \in S_i$, 
+        If $i_2 \in S_i$, 
         $$
-            p(idx_2) = \frac{n_i}{n_1}*\frac{1}{n_i}+x*\frac{n1-n_c}{n1}*\frac{1}{n_i} = \frac{1}{n_2}
+            p(i_2) = \frac{n_i}{n_1}*\frac{1}{n_i}+x*\frac{n1-n_c}{n1}*\frac{1}{n_i} = \frac{1}{n_2}
         $$
-        If $idx_2 \notin S_i$, 
+        If $i_2 \notin S_i$, 
         $$
-        \frac{n1-n_i}{n1}*\frac{1}{(n2-n_i)}*(1-x) = \frac{1}{n2}
+        \frac{n_1-n_i}{n_1}*\frac{1}{(n_2-n_i)}*(1-x) = \frac{1}{n_2}
         $$
         then
         $$
@@ -418,31 +418,30 @@
                 \item First, We randomly select an idx $i_1$ from the $S_1$.
                 \item If $i_1 \in S_2$ and $n_1 < n_2$, randomly sample in $S_2-S_i$ with a probability of $\frac{n_2-n_1}{n_2}$ 
                 \item If $i_1 \in S_2$ and $n_1 > n_2$, do nothing
-                \item If $i_1 \notin S_2$ and $n_1 > n_2$， randomly sample in $S_2-S_i$ with a probability of $1-\frac{n_1*(n_2-n_i)}{n_2*(n_1-n_i)}$
+                \item If $i_1 \notin S_2$ and $n_1 > n_2$， randomly sample in $S_i$ with a probability of $1-\frac{n_1*(n_2-n_i)}{n_2*(n_1-n_i)}$
                 \item If $i_1 \notin S_2$ and $n_1 < n_2$， do nothing
             \end{itemize}
         \end{block}
 \end{frame}
 
-\begin{frame}[fragile]
-    \frametitle{Data Structure}
-    \begin{lstlisting}
-        
-    \end{lstlisting}
+\begin{frame}
+    \frametitle{Sampling Tree}
+    
 \end{frame}
 
-\begin{frame}[fragile]
+\begin{frame}
     \frametitle{Insert}
-    \begin{lstlisting}
-        
-    \end{lstlisting}
+    
 \end{frame}
 
-\begin{frame}[fragile]
-    \frametitle{Sample}
-    \begin{lstlisting}
-        
-    \end{lstlisting}
+\begin{frame}
+    \frametitle{Delete}
+    
+\end{frame}
+
+\begin{frame}
+    \frametitle{Sampling}
+    
 \end{frame}
 
 \begin{frame}
@@ -474,23 +473,53 @@
     \includegraphics[width=12cm]{global_img_dir/space.png}
 \end{frame}
 
-\begin{frame}
+\begin{frame}[fragile]
     \frametitle{Buffer Pool: allocate inode}
+    
+        \begin{block} {case1}
+            There is enough free space to allocate
+        \end{block}
+        \begin{lstlisting}[language=python]
+    if inode_tail + inode_size > data_head:
+        return inode_tail
+        \end{lstlisting}
+
+        \begin{block} {case2}
+            Free Some unused inode
+        \end{block}
+        \begin{lstlisting}[language=python]
+    for head in all_heads:
+        if check_free(head) is True:
+            return head
+        \end{lstlisting}
+        
 \end{frame}
 
-\begin{frame}
+\begin{frame}[fragile]
     \frametitle{Buffer Pool: allocate data node}
-\end{frame}
+    \begin{block} {case1}
+        There is enough free space to allocate
+    \end{block}
+    \begin{lstlisting}[language=python]
+if inode_tail + inode_size > data_head:
+    return inode_tail
+    \end{lstlisting}
 
-\begin{frame}
-    \frametitle{Buffer Pool: write}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Buffer Pool: read}
+    \begin{block} {case2}
+        Free Some unused datanode
+    \end{block}
+    \begin{lstlisting}[language=python]
+free = True
+for datanode in all_datanodes:
+    for ref in refs of datanode:
+        if databit(ref) == 0 && dataaddr(ref) == datanode:
+            free = False
+            break
+    if free is True:
+        return datanode
+    \end{lstlisting}
 \end{frame}
 \section{Experiment}
-
 \begin{frame}
     \frametitle{Experiment}
     \begin{figure}[htbp]
