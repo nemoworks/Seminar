@@ -429,7 +429,7 @@
     \begin{block} {Attributes}
         \begin{itemize}
             \item $parent = {leftChild} \cap {rightChild}$
-            \item leftChild.maxLength <= rightChild.minLength
+            \item leftChild <= rightChild
         \end{itemize}
     \end{block}
     \centering
@@ -440,10 +440,10 @@
     \frametitle{Sampling}
     \begin{block} {Samping: In-Order Traversal}
         \begin{itemize}
-            \item Sampling $i_1$ from $S_1\cap S_2$
-            $$Pub = Pub \cup {i_1}$$
-            \item if $p > 1-|S_1\cap S_2|/|S1|$, Sampling $i_2$ from $S_1-S_2$
-            $$Pub = Pub-{i_1}; Pri = Pri\cup{i_2}; (S_1-S_2)=(S_1-S_2)\cup{i_1};$$
+            \item 1. if $p >= l_0/l_1$, sample $i_1$ from $S_1$. Otherwise $i_1 = i_0$
+            \item 2. if $p >= l_1/l_2$, sample $i_2$ from $S_2$ and $i_1 = -1$. Otherwise $i_2 = i_1$
+            \item 3. if if $i_1 \neq -1$ and $p >= l_2/l_3$, sample from $S_3$. Otherwise $i_3 = i_1$
+            \item 4. return $<i_2, l_2>, <i_3, l_3>$
         \end{itemize}
     \end{block}
     \centering
