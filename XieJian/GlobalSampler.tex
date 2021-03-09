@@ -275,138 +275,281 @@
 \begin{frame}
     \frametitle{Sampling: problem description}
     \begin{block}{Defination}
-        For a single task, the sampler needs to select an index from the index set $S$.\\
-        Similarly, for multiple tasks, the sampler needs to select an index from multiple sets $\{S_1, S_2, ...\}$
+        For a single task, the sampler needs to select an element from the index set $S$.\\
+        Similarly, for multiple tasks, the sampler needs to select some elements $\{s_1, s_2, ...\}$ from multiple sets $\{S_1, S_2, ...\}$
     \end{block}
     \begin{block}{Requirments}
         \begin{itemize}
-            \item The index in the set $S$ should be randomly sampled. The probability of the index being selected is $1/|S|$
-            \item Duplicate indexes need to be merged
+            \item The index in the set $S$ should be randomly sampled. $p(s_i) = \frac{1}{|S_i|}$
+            \item Duplicate indexes need to be merged. Maximize $p(s_i = s_j)$
             \item There can be no problem of "starvation"
         \end{itemize}
     \end{block}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Assumption 1}
-    \begin{block}{Requirments}
+    \frametitle{Independently Sampling Algorithm}
+    \begin{block}{Assumption}
+        There are two sets: $S_1, S_2$, and their length is $n_1, n_2$ \\
+        The intersection set of them is $S_i$, whose length is $n_i$ \\
+        We divide the set $S_1$ into $S_i$ and $S_{d1} = S_1 - S_i$ \\
+        We divide the set $S_2$ into $S_i$ and $S_{d2} = S_2 - S_i$
+    \end{block}
+    \begin{block}{Example}
+        $S_1 = \{1,2,3,4,5\} = \{1,2,3\} \cup \{4,5\}$ \\
+        $S_2 = \{1,2,3,6,7\} = \{1,2,3\} \cup \{6,7\}$
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Independently Sampling Algorithm}
+    \begin{block}{Algorithm}
         \begin{itemize}
-            \item There are only two sets $\{S_1, S_2\}$
-            \item $S_1$ is same as $S_2$. And the length of $S_1$ and $S_2$ is n
+            \item $S_1$:
+            \begin{itemize}
+                \item $step_{11}$: randomly select a set from $S_i$ and $S_{d1}$
+                \item $step_{12}$: if the set is $S_{d1}$, randomly select a element1 from $S_{d1}$
+                \item $step_{13}$: if the set is $S_i$, randomly select a element1 from $S_i$
+            \end{itemize}
+            \item $S_2$:
+            \begin{itemize}
+                \item $step_{21}$: randomly select a set from $S_i$ and $S_{d2}$
+                \item $step_{22}$: if the set is $S_{d2}$, randomly select a element2 from $S_{d2}$
+                \item $step_{23}$: if the set is $S_i$, randomly select a element2 from $S_i$
+            \end{itemize}
+        \end{itemize}
+    \end{block}
+    \begin{block}{Probability}
+        \begin{equation}
+            \begin{aligned}
+                p(element1) = \frac{1}{n_1},p(element2) = \frac{1}{n_2}\\
+                p(element1 = element2) = \frac{n_i}{n_1*n_2}
+            \end{aligned}
+        \end{equation}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Dependently Sampling Algorithm I}
+    \begin{block}{Idea}
+        The $step_{13}$ is same as $step_{23}$. We can merge them.
+    \end{block}
+    \begin{block}{Algorithm}
+        \begin{itemize}
+            \item $S_1$:
+            \begin{itemize}
+                \item $step_{11}$: randomly select a set from $S_i$ and $S_{d1}$
+                \item $step_{12}$: if the set is $S_{d1}$, randomly select a element1 from $S_{d1}$
+                \item $step_{13}$: if the set is $S_i$, go to $step_{33}$
+            \end{itemize}
+            \item $S_2$:
+            \begin{itemize}
+                \item $step_{21}$: randomly select a set from $S_i$ and $S_{d2}$
+                \item $step_{22}$: if the set is $S_{d2}$, randomly select a element2 from $S_{d2}$
+                \item $step_{23}$: if the set is $S_i$, go to $step_{33}$
+            \end{itemize}
+            \item $step_{33}$: randomly select a element from $S_i$
         \end{itemize}
     \end{block}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Solution 1}
-    \begin{block}{description}
-        In order to avoid the problem of "starvation", we sampling the idx through polling. 
+    \frametitle{Dependently Sampling Algorithm I}
+    \begin{block}{Probability}
+        \begin{equation}
+            \begin{aligned}
+                p(element1) &= \frac{1}{n_1} \\
+                p(element2) &= \frac{1}{n_2}\\
+                p(element1 = element2) &=  \frac{n_i}{n_1}*\frac{n_i}{n_1} = \frac{n_i^2}{n_1*n_2}
+            \end{aligned}
+        \end{equation}
     \end{block}
-    \begin{block}{steps}
+    \begin{block}{Example}
+        $S_1 =  \{1,2,3\} \cup \{4,5\}$; $S_2 = \{1,2,3\} \cup \{6,7\}$
         \begin{itemize}
-            \item First, We randomly select an idx $i_1$ from the $S_1$.
-            \item Because $S_1$ and $S_2$ are the same, we don't need to sample $S_2$
+            \item As for $S_1$, select set $\{1,2,3\}$ with probability $0.6$
+            \item As for $S_2$, select set $\{1,2,3\}$ with probability $0.6$
+            \item Finally, randomly sampling element in $\{1,2,3\}$
+            \item $p(element1 = element2) = 0.6*0.6 = 0.36$
         \end{itemize}
     \end{block}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Assumption 2}
-    \begin{block}{Requirments}
+    \frametitle{Dependently Sampling Algorithm I}
+    \begin{block}{Idea}
+        The $step_{11}$ and $step_{21}$ are similar. We can merge them.
+    \end{block}
+    \begin{block}{Algorithm}
         \begin{itemize}
-            \item There are only two sets $\{S_1, S_2\}$
-            \item $S_1$ and $S_2$ are equal in length, which is $n$
-            \item The intersection of $S_1$ and $S_2$ is $S_i$, whose length is $n_i$
-        \end{itemize}
-    \end{block}
-\end{frame}
-\begin{frame}
-    \frametitle{Solution 2}
-    \begin{block}{steps}
-        \begin{itemize}
-            \item First, We randomly select an idx $i_1$ from the $S_1$.
-            \item If $i_1 \in S_i$， then $i_2 = i_1$
-            \item If $i_1 \notin S_i$， then we randomly select an idx $i_2$ from the $S_2-S_1$
-        \end{itemize}
-    \end{block}
-\end{frame}
-\begin{frame}
-    \frametitle{Proving}
-    \begin{block}{S1}
-        $p(i_1) = \frac{1}{n}$
-    \end{block}
-    \begin{block}{S2}
-        If $i_2 \in S_i$, 
-        $$
-            p(i_2) = \frac{n_i}{n}*\frac{1}{n_i} = \frac{1}{n}
-        $$
-        If $i_2 \notin S_i$, 
-        $$
-            p(i_2) = \frac{n-n_i}{n}*\frac{1}{n-n_i} = \frac{1}{n}
-        $$
-    \end{block}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Assumption 3}
-    \begin{block}{Requirments}
-        \begin{itemize}
-            \item There are only two sets $\{S_1, S_2\}$
-            \item $S_1$ is different from $S_2$, and their length are $n_1$ and $n_2$
-            \item The intersection of $S_1$ and $S_2$ is $S_i$, whose length is $n_i$
+            \item $step_{1}$: randomly select a set from $S_i$ and $S_{d1}$
+            \item $S_1$:
+            \begin{itemize}
+                \item $step_{12}$: if the set is $S_{d1}$, randomly select a element1 from $S_{d1}$
+                \item $step_{13}$: if the set is $S_i$, go to $step_{33}$
+            \end{itemize}
+            \item $S_2$:
+            \begin{itemize}
+                \item $step_{22}$: if the set is not $S_d1$, randomly select a element2 from $S_{d2}$
+                \item $step_{23}$: if the set is $S_i$, go to $step_{33}$
+            \end{itemize}
+            \item $step_{33}$: randomly select a element from $S_i$
         \end{itemize}
     \end{block}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Solution 3}
-    If we use Solution2.
-    \begin{block}{S2}
-        If $i_2 \in S_i$, 
-        $$
-            p(i_2) = \frac{n_i}{n_1}*\frac{1}{n_i} = \frac{1}{n_1}
-        $$
-        If $i_2 \notin S_i$, 
-        $$
-            p(i_2) = \frac{n_1-n_i}{n_1}*\frac{1}{n2-n_i} = \frac{n_1-n_i}{n_1*(n_2-n_i)}
-        $$
+    \frametitle{Problem}
+    \begin{block}{Probability}
+        As for $S_1$:
+        \begin{equation}
+            \begin{aligned}
+                p_1(S_i) &= \frac{n_i}{n_1} \\
+                p_1(S_{d1}) &= 1-\frac{n_i}{n_1}
+            \end{aligned}
+        \end{equation}
+        As for $S_2$:
+        \begin{equation}
+            \begin{aligned}
+                p_2(S_i) &= \frac{n_i}{n_2} \\
+                p_2(S_{d1}) &= 1-\frac{n_i}{n_2}
+            \end{aligned}
+        \end{equation}
+    \end{block}
+    \begin{block}{Problem}
+        if $n_1 \neq n_2$, \\
+        then $p_1(S_i) \neq p_2(S_i)$ and $p_1(S_{d1}) \neq p_2(S_{d2})$
     \end{block}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Solution 3}
-        if $n_1 < n_2$, then $p(i_2 \in S_i) > \frac{1}{n_2}$. So in step 2 of Solution2, we should randomly select a idx in $S_2-S_i$ in probability of $x$.\\
-        \begin{block}
-        If $i_2 \in S_i$, 
-        $$
-            p(i_2) = \frac{n_i}{n_1}*(1-x)*\frac{1}{n_i} = \frac{1}{n_2}
-        $$
-        If $i_2 \notin S_i$, 
-        $$
-            p(i_2) = \frac{n_1-n_i}{n_1}*\frac{1}{n2-n_i} + \frac{n_i}{n_1}*x*\frac{1}{n2-n_i} = \frac{1}{n_2}
-        $$
+    \frametitle{Case1: n1 < n2}
+    \begin{block}{Problem}
+        \begin{equation}
+            \begin{aligned}
+                (p_1(S_i) = \frac{n_i}{n_1}) > (p_2{S_i} = \frac{n_i}{n_2}) \\
+            \end{aligned}
+        \end{equation}
+    \end{block}
+    \begin{block}{Approach}
+        So in $step_1$, when select $S_i$, it should be changed $S_{d2}$ in probability of $p$. \\
+        The equation is 
+        \begin{equation}
+            \begin{aligned}
+                p_2(S_i) &= p_1(S_i)*(1-p) = \frac{n_i}{n_2} \\
+                p_2(S_{d2}) &= p_2(S_{d1})+p_1(S_i)*{p} = 1-\frac{n_i}{n_2}
+            \end{aligned}
+        \end{equation}
         then
+        $$p = 1-\frac{n_1}{n_2}$$
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Dependently Sampling Algorithm II}
+    \begin{block}{Algorithm}
+        \begin{itemize}
+            \item $step_{1}$: randomly select a set $S$ from $S_i$ and $S_{d1}$
+            \item $S_1$:
+            \begin{itemize}
+                \item $step_{12}$: if the $S$ is $S_{d1}$, randomly select a element1 from $S_{d1}$
+                \item $step_{13}$: if the $S$ is $S_i$, go to $step_{3}$
+            \end{itemize}
+            \item $S_2$:
+            \begin{itemize}
+                \item $step_{22}$: if the $S$ is $S_{d2}$, randomly select a element2 from $S_{d2}$
+                \item $step_{23}$: if the $S$ is $S_i$
+                \begin{itemize}
+                    \item randomly let $S = S_{d1}$ in probability of $\frac{n_1}{n_2}$
+                    \item if $S$ is $S_{d2}$, randomly select a element2 from $S_{d2}$
+                    \item if $S$ is $S_i$, go to $step_{3}$
+                \end{itemize}
+            \end{itemize}
+            \item $step_{3}$: randomly select a element from $S_i$
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Dependently Sampling Algorithm II}
+    \begin{block}{Probability}
+        If in $step_1$, the selected set $S = S_i$, and $p_1(S_i) = \frac{n_i}{n_1}$
         $$
-            x = \frac{n_2-n_1}{n_2}
+            p(element2) = p_1(S_i)*(\frac{n_1}{n_2})*\frac{1}{n_i} = \frac{1}{n_2}
+        $$
+        If in $step_1$, the selected set $S = S_{d1}$, and $p_1(S_{d1}) = 1-\frac{n_i}{n_1}$
+        $$
+            p(element2) = (p_1(S_{d1})+(1-\frac{n_1}{n_2})*p_1(S_i))*\frac{1}{n_2-n_i} = \frac{1}{n_2}
+        $$
+        and
+        $$
+            p(element1 = element2) = p_1(S_i)*(\frac{n_1}{n_2}) = \frac{n_i}{n_2}
         $$
     \end{block}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Solution 3}
-        if $n_1 > n_2$, then $p(i_2 \notin S_i) > \frac{1}{n_2}$. So in step 3 of Solution2, we should randomly select a idx in $S_i$ in probability of $x$.\\
-        \begin{block}
-        If $i_2 \in S_i$, 
-        $$
-            p(i_2) = \frac{n_i}{n_1}*\frac{1}{n_i}+x*\frac{n1-n_c}{n1}*\frac{1}{n_i} = \frac{1}{n_2}
-        $$
-        If $i_2 \notin S_i$, 
-        $$
-        \frac{n_1-n_i}{n_1}*\frac{1}{(n_2-n_i)}*(1-x) = \frac{1}{n_2}
-        $$
+    \frametitle{Case1: n1 > n2}
+    \begin{block}{Problem}
+        \begin{equation}
+            \begin{aligned}
+                (p_1(S_{d1}) = 1-\frac{n_i}{n_1}) > (p_2{S_i} = \frac{n_i}{n_2}) \\
+            \end{aligned}
+        \end{equation}
+    \end{block}
+    \begin{block}{Approach}
+        So in $step_1$, when select $S_i$, it should be changed $S_{d2}$ in probability of $p$. \\
+        The equation is 
+        \begin{equation}
+            \begin{aligned}
+                p_2(S_i) &= p_1(S_i)*(1-p) = \frac{n_i}{n_2} \\
+                p_2(S_{d2}) &= p_2(S_{d1})+p_1(S_i)*{p} = 1-\frac{n_i}{n_2}
+            \end{aligned}
+        \end{equation}
         then
+        $$p = 1-\frac{n_1}{n_2}$$
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Dependently Sampling Algorithm II}
+    \begin{block}{Algorithm}
+        \begin{itemize}
+            \item $step_{1}$: randomly select a set $S$ from $S_i$ and $S_{d1}$
+            \item $S_1$:
+            \begin{itemize}
+                \item $step_{12}$: if the $S$ is $S_{d1}$, randomly select a element1 from $S_{d1}$
+                \item $step_{13}$: if the $S$ is $S_i$, go to $step_{3}$
+            \end{itemize}
+            \item $S_2$:
+            \begin{itemize}
+                \item $step_{22}$: if the $S$ is $S_{d2}$, randomly select a element2 from $S_{d2}$
+                \item $step_{23}$: if the $S$ is $S_i$
+                \begin{itemize}
+                    \item randomly let $S = S_{d1}$ in probability of $\frac{n_1}{n_2}$
+                    \item if $S$ is $S_{d2}$, randomly select a element2 from $S_{d2}$
+                    \item if $S$ is $S_i$, go to $step_{3}$
+                \end{itemize}
+            \end{itemize}
+            \item $step_{3}$: randomly select a element from $S_i$
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Dependently Sampling Algorithm II}
+    \begin{block}{Probability}
+        If in $step_1$, the selected set $S = S_i$, and $p_1(S_i) = \frac{n_i}{n_1}$
         $$
-            x = 1-\frac{n_1*(n_2-n_i)}{n_2*(n_1-n_i)}
+            p(element2) = p_1(S_i)*(\frac{n_1}{n_2})*\frac{1}{n_i} = \frac{1}{n_2}
+        $$
+        If in $step_1$, the selected set $S = S_{d1}$, and $p_1(S_{d1}) = 1-\frac{n_i}{n_1}$
+        $$
+            p(element2) = (p_1(S_{d1})+(1-\frac{n_1}{n_2})*p_1(S_i))*\frac{1}{n_2-n_i} = \frac{1}{n_2}
+        $$
+        and
+        $$
+            p(element1 = element2) = p_1(S_i)*(\frac{n_1}{n_2}) = \frac{n_i}{n_2}
         $$
     \end{block}
 \end{frame}
