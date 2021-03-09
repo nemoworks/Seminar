@@ -416,10 +416,18 @@
         \begin{block} {steps}
             \begin{itemize}
                 \item First, We randomly select an idx $i_1$ from the $S_1$.
-                \item If $i_1 \in S_2$ and $n_1 < n_2$, randomly sample in $S_2-S_i$ with a probability of $\frac{n_2-n_1}{n_2}$ 
-                \item If $i_1 \in S_2$ and $n_1 > n_2$, do nothing
-                \item If $i_1 \notin S_2$ and $n_1 > n_2$， randomly sample in $S_i$ with a probability of $1-\frac{n_1*(n_2-n_i)}{n_2*(n_1-n_i)}$
-                \item If $i_1 \notin S_2$ and $n_1 < n_2$， do nothing
+                \item If $n_1 < n_2$:
+                \begin{itemize}
+                    \item If $i_1 \notin S_i$, randomly sample in $S_2-S_i$
+                    \item If $i_1 \in S_i$ and $p > \frac{n_2}{n_1}$, randomly sample in $S_2-S_i$
+                    \item If $i_1 \in S_i$ and $p < \frac{n_2}{n_1}$, $i_2 = i_1$
+                \end{itemize}
+                \item If $n_1 > n_2$:
+                \begin{itemize}
+                    \item If $i_1 \notin S_i$ and $p < \frac{n_1*(n_2-n_i)}{n_2*(n_1-n_i)}$, randomly sample in $S_2-S_i$
+                    \item If $i_1 \notin S_i$ and $p > \frac{n_1*(n_2-n_i)}{n_2*(n_1-n_i)}$, randomly sample in $S_i$
+                    \item If $i_1 \in S_i$, $i_2 = i_1$
+                \end{itemize}
             \end{itemize}
         \end{block}
 \end{frame}
@@ -428,13 +436,16 @@
     \frametitle{Sampling Tree}
     \begin{block} {Attributes}
         \begin{itemize}
-            \item $parent = {leftChild} \cap {rightChild}$
-            \item leftChild <= rightChild
+            \item There are two sets $S_a, S_b$
+            \item $S_1 = S_a\cap S_b$
+            \item $S_2 = S_a- S_b$
+            \item $S_3 = S_b- S_a$
+            \item $|S_2| < |S_3|$
         \end{itemize}
     \end{block}
     \centering
     \includegraphics[width=6cm]{global_img_dir/SamplingTree.png}
-\end{frame}
+\end{frame} 
 
 \begin{frame}
     \frametitle{Sampling}
@@ -452,8 +463,14 @@
 
 \begin{frame}
     \frametitle{Buffer Pool: Data Structure}
+    \begin{block} {data}
+        \begin{itemize}
+            \item There are two kinds of nodes: inode and datanode
+            \item Every task has a head inode address
+        \end{itemize}
+    \end{block}
     \centering
-    \includegraphics[width=10cm]{global_img_dir/linklist.png}
+    \includegraphics[width=8cm]{global_img_dir/linklist.png}
 \end{frame}
 
 \begin{frame}
@@ -469,15 +486,13 @@
 
 \begin{frame}
     \frametitle{Buffer Pool: Automata}
+    \begin{block} {valid byte}
+        | used bit | next bit | data bit |
+    \end{block}
     \centering
     \includegraphics[width=12cm]{global_img_dir/automata.png}
 \end{frame}
 
-\begin{frame}
-    \frametitle{Buffer Pool: Address Space}
-    \centering
-    \includegraphics[width=12cm]{global_img_dir/space.png}
-\end{frame}
 
 \begin{frame}[fragile]
     \frametitle{Buffer Pool: allocate inode}
