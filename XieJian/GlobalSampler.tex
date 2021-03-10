@@ -650,7 +650,7 @@
             \begin{itemize}
                 \item $S_a = S_a - \{a\}$
             \end{itemize}
-            \item case2: $p_1 > n_a/n_1$  and  $p_2 > n1/n_2$:
+            \item case2: $p_1 > n_a/n_1$:
             \begin{itemize}
                 \item $S_b = S_a - \{b\}$
                 \item $S_c = S_c - \{c\}$
@@ -676,10 +676,10 @@
     \frametitle{case3 and case4}
     \begin{block}{Algorithm}
         \begin{itemize}
-            \item case3: $p_1 > n_a/n_1$  and  $p_2 \leq n1/n_2$
+            \item case3: $p_1 \leq n_a/n_1$  and  $p_2 > n1/n_2$
             \begin{itemize}
-                \item $S_c = S_c - \{c\}$
-                \item $S_b = S_b \cup \{a\} - \{b\}$
+                \item $S_b = S_b - \{b\}$
+                \item $S_c = S_c \cup \{a\} - \{c\}$
             \end{itemize}
         \end{itemize} 
     \end{block}
@@ -688,12 +688,12 @@
         \begin{minipage}[t]{0.48\textwidth}
         \centering
         \includegraphics[width=3cm]{global_img_dir/Sampling3.png}
-        \caption{case3}
+        \caption{impossible}
         \end{minipage}
         \begin{minipage}[t]{0.48\textwidth}
         \centering
         \includegraphics[width=3cm]{global_img_dir/Sampling4.png}
-        \caption{case4}
+        \caption{case3}
         \end{minipage}
     \end{figure}
 \end{frame}
