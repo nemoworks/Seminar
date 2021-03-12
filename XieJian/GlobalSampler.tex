@@ -276,12 +276,12 @@
     \frametitle{Sampling: problem description}
     \begin{block}{Defination}
         For a single task, the sampler needs to select an element from the index set $S$.\\
-        Similarly, for multiple tasks, the sampler needs to select some elements $\{s_1, s_2, ...\}$ from multiple sets $\{S_1, S_2, ...\}$
+        Similarly, for multiple tasks, the sampler needs to select some elements $\{e_1, e_2, ...\}$ from multiple sets $\{S_1, S_2, ...\}$
     \end{block}
     \begin{block}{Requirments}
         \begin{itemize}
-            \item The index in the set $S$ should be randomly sampled. $p(s_i) = \frac{1}{|S_i|}$
-            \item Duplicate indexes need to be merged. Maximize the probability $p(s_i = s_j)$
+            \item The index in the set $S$ should be randomly sampled. $p(e_i) = \frac{1}{|S_i|}$
+            \item Duplicate indexes need to be merged. Maximize the probability $p(e_i = e_j)$
             \item There can be no problem of "starvation"
         \end{itemize}
     \end{block}
@@ -308,22 +308,22 @@
             \item $S_1$:
             \begin{itemize}
                 \item $step_{11}$: randomly select a set from $S_i$ and $S_{d1}$
-                \item $step_{12}$: if the set is $S_{d1}$, randomly select a element1 from $S_{d1}$
-                \item $step_{13}$: if the set is $S_i$, randomly select a element1 from $S_i$
+                \item $step_{12}$: if the set is $S_{d1}$, randomly select a element $e_1$ from $S_{d1}$
+                \item $step_{13}$: if the set is $S_i$, randomly select a element $e_1$ from $S_i$
             \end{itemize}
             \item $S_2$:
             \begin{itemize}
                 \item $step_{21}$: randomly select a set from $S_i$ and $S_{d2}$
-                \item $step_{22}$: if the set is $S_{d2}$, randomly select a element2 from $S_{d2}$
-                \item $step_{23}$: if the set is $S_i$, randomly select a element2 from $S_i$
+                \item $step_{22}$: if the set is $S_{d2}$, randomly select a element $e_2$ from $S_{d2}$
+                \item $step_{23}$: if the set is $S_i$, randomly select a element $e_2$ from $S_i$
             \end{itemize}
         \end{itemize}
     \end{block}
     \begin{block}{Probability}
         \begin{equation}
             \begin{aligned}
-                p(element1) = \frac{1}{n_1},p(element2) = \frac{1}{n_2}\\
-                p(element1 = element2) = \frac{n_i}{n_1*n_2}
+                p(e_1) = \frac{1}{n_1},p(e_2) = \frac{1}{n_2}\\
+                p(e_1 = e_2) = \frac{n_i}{n_1*n_2}
             \end{aligned}
         \end{equation}
     \end{block}
@@ -339,16 +339,16 @@
             \item $S_1$:
             \begin{itemize}
                 \item $step_{11}$: randomly select a set from $S_i$ and $S_{d1}$
-                \item $step_{12}$: if the set is $S_{d1}$, randomly select a element1 from $S_{d1}$
-                \item $step_{13}$: if the set is $S_i$, go to $step_{33}$
+                \item $step_{12}$: if the set is $S_{d1}$, randomly select a element $e_1$ from $S_{d1}$
+                \item $step_{13}$: if the set is $S_i$, go to $step_{3}$
             \end{itemize}
             \item $S_2$:
             \begin{itemize}
                 \item $step_{21}$: randomly select a set from $S_i$ and $S_{d2}$
-                \item $step_{22}$: if the set is $S_{d2}$, randomly select a element2 from $S_{d2}$
-                \item $step_{23}$: if the set is $S_i$, go to $step_{33}$
+                \item $step_{22}$: if the set is $S_{d2}$, randomly select a element $e_2$ from $S_{d2}$
+                \item $step_{23}$: if the set is $S_i$, go to $step_{3}$
             \end{itemize}
-            \item $step_{33}$: randomly select a element from $S_i$
+            \item $step_{3}$: randomly select a element $e$ from $S_i$
         \end{itemize}
     \end{block}
 \end{frame}
@@ -358,9 +358,9 @@
     \begin{block}{Probability}
         \begin{equation}
             \begin{aligned}
-                p(element1) &= \frac{1}{n_1} \\
-                p(element2) &= \frac{1}{n_2}\\
-                p(element1 = element2) &=  \frac{n_i}{n_1}*\frac{n_i}{n_1} = \frac{n_i^2}{n_1*n_2}
+                p(e_1) &= \frac{1}{n_1}\\
+                p(e_2) &= \frac{1}{n_2}\\
+                p(e_1 = e_2) &=  \frac{n_i}{n_1}*\frac{n_i}{n_2} = \frac{n_i^2}{n_1*n_2}
             \end{aligned}
         \end{equation}
     \end{block}
@@ -370,7 +370,7 @@
             \item As for $S_1$, select set $\{1,2,3\}$ with probability $0.6$
             \item As for $S_2$, select set $\{1,2,3\}$ with probability $0.6$
             \item Finally, randomly sampling element in $\{1,2,3\}$
-            \item $p(element1 = element2) = 0.6*0.6 = 0.36$
+            \item $p(e_1 = e_2) = 0.6*0.6 = 0.36$
         \end{itemize}
     \end{block}
 \end{frame}
@@ -385,15 +385,15 @@
             \item $step_{1}$: randomly select a set from $S_i$ and $S_{d1}$
             \item $S_1$:
             \begin{itemize}
-                \item $step_{12}$: if the set is $S_{d1}$, randomly select a element1 from $S_{d1}$
-                \item $step_{13}$: if the set is $S_i$, go to $step_{33}$
+                \item $step_{12}$: if the set is $S_{d1}$, randomly select a element $e_1$ from $S_{d1}$
+                \item $step_{13}$: if the set is $S_i$, go to $step_{3}$
             \end{itemize}
             \item $S_2$:
             \begin{itemize}
-                \item $step_{22}$: if the set is not $S_{d1}$, randomly select a element2 from $S_{d2}$
-                \item $step_{23}$: if the set is $S_i$, go to $step_{33}$
+                \item $step_{22}$: if the set is not $S_{d1}$, randomly select a element $e_2$ from $S_{d2}$
+                \item $step_{23}$: if the set is $S_i$, go to $step_{3}$
             \end{itemize}
-            \item $step_{33}$: randomly select a element from $S_i$
+            \item $step_{3}$: randomly select a element $e$ from $S_i$
         \end{itemize}
     \end{block}
 \end{frame}
@@ -452,20 +452,20 @@
             \item $step_{1}$: randomly select a set $S$ from $S_i$ and $S_{d1}$
             \item $S_1$:
             \begin{itemize}
-                \item $step_{12}$: if the $S$ is $S_{d1}$, randomly select a element1 from $S_{d1}$
+                \item $step_{12}$: if the $S$ is $S_{d1}$, randomly select a element $e_1$ from $S_{d1}$
                 \item $step_{13}$: if the $S$ is $S_i$, go to $step_{3}$
             \end{itemize}
             \item $S_2$:
             \begin{itemize}
-                \item $step_{22}$: if the $S$ is $S_{d2}$, randomly select a element2 from $S_{d2}$
+                \item $step_{22}$: if the $S$ is $S_{d2}$, randomly select a element $e_2$ from $S_{d2}$
                 \item $step_{23}$: if the $S$ is $S_i$
                 \begin{itemize}
                     \item randomly let $S = S_{d1}$ in probability of $1-\frac{n_1}{n_2}$
-                    \item if $S$ is $S_{d2}$, randomly select a element2 from $S_{d2}$
+                    \item if $S$ is $S_{d2}$, randomly select a element $e_2$ from $S_{d2}$
                     \item if $S$ is $S_i$, go to $step_{3}$
                 \end{itemize}
             \end{itemize}
-            \item $step_{3}$: randomly select a element from $S_i$
+            \item $step_{3}$: randomly select a element $e$ from $S_i$
         \end{itemize}
     \end{block}
 \end{frame}
@@ -483,22 +483,22 @@
         % $$
         % and
         $$
-            p(element1 = element2) = p_1(S_i)*(\frac{n_1}{n_2}) = \frac{n_i}{n_2}
+            p(e_1 = e_2) = p_1(S_i)*(\frac{n_1}{n_2}) = \frac{n_i}{n_2}
         $$
     \end{block}
     \begin{block}{Example}
         $S_1 =  \{1,2,3\} \cup \{4\}$; $S_2 = \{1,2,3\} \cup \{6,7\}$
         \begin{itemize}
-            \item In $step_1$, select set $\{1,2,3\}$ with probability $\frac{3}{5} = 0.75$
+            \item In $step_1$, select set $\{1,2,3\}$ with probability $\frac{3}{4} = 0.75$
             \item Then as for $S_2$, select set $\{1,2,3\}$ with probability $\frac{4}{5}=0.8$
             \item Finally, randomly sampling element in $\{1,2,3\}$
-            \item $p(element1 = element2) = 0.75*0.8=0.6$
+            \item $p(e_1 = e_2) = 0.75*0.8=0.6$
         \end{itemize}
     \end{block}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Case1: n1 > n2}
+    \frametitle{Case2: n1 > n2}
     \begin{block}{Problem}
         \begin{equation}
             \begin{aligned}
@@ -516,7 +516,7 @@
             \end{aligned}
         \end{equation}
         then
-        $$p = 1-\frac{n1*(n2-n_c)}{n2*(n1-n_c)}$$
+        $$p = 1-\frac{n1*(n2-n_i)}{n2*(n1-n_i)}$$
     \end{block}
 \end{frame}
 
@@ -527,20 +527,20 @@
             \item $step_{1}$: randomly select a set $S$ from $S_i$ and $S_{d1}$
             \item $S_1$:
             \begin{itemize}
-                \item $step_{12}$: if the $S$ is $S_{d1}$, randomly select a element1 from $S_{d1}$
+                \item $step_{12}$: if the $S$ is $S_{d1}$, randomly select a element $e_1$ from $S_{d1}$
                 \item $step_{13}$: if the $S$ is $S_i$, go to $step_{3}$
             \end{itemize}
             \item $S_2$:
             \begin{itemize}
-                \item $step_{22}$: if the $S$ is $S_{d2}$, randomly select a element2 from $S_{d2}$
+                \item $step_{22}$: if the $S$ is $S_{d2}$, randomly select a element $e_2$ from $S_{d2}$
                 \begin{itemize}
-                    \item randomly let $S = S_{i}$ in probability of $1-\frac{n1*(n2-n_c)}{n2*(n1-n_c)}$
-                    \item if $S$ is $S_{d2}$, randomly select a element2 from $S_{d2}$
-                    \item if $S$ is $S_i$, randomly select a element2 from $S_{i}$
+                    \item randomly let $S = S_{i}$ in probability of $1-\frac{n1*(n2-n_i)}{n2*(n1-n_i)}$
+                    \item if $S$ is $S_{d2}$, randomly select a element $e_2$ from $S_{d2}$
+                    \item if $S$ is $S_i$, randomly select a element $e_2$ from $S_{i}$
                 \end{itemize}
                 \item $step_{23}$: if the $S$ is $S_i$, go to $step_3$
             \end{itemize}
-            \item $step_{3}$: randomly select a element from $S_i$
+            \item $step_{3}$: randomly select a element $e$ from $S_i$
         \end{itemize}
     \end{block}
 \end{frame}
@@ -558,16 +558,16 @@
         % $$
         % and
         $$
-            p(element1 = element2) = p_1(S_i)) = \frac{n_i}{n_1}
+            p(e_1 = e_2) = p_1(S_i) = \frac{n_i}{n_1}
         $$
     \end{block}
     \begin{block}{Example}
         $S_1 =  \{1,2,3\} \cup \{4,5\}$; $S_2 = \{1,2,3\} \cup \{6\}$
         \begin{itemize}
-            \item In $step_1$, select set $\{1,2,3\}$ with probability $\frac{3}{4} = 0.6$
+            \item In $step_1$, select set $\{1,2,3\}$ with probability $\frac{3}{5} = 0.6$
             \item Then $S_2$ must select $\{1,2,3\}$
             \item Finally, randomly sampling element in $\{1,2,3\}$
-            \item $p(element1 = element2) = 0.6$
+            \item $p(e_1 = e_2) = 0.6$
         \end{itemize}
     \end{block}
 \end{frame}
@@ -613,18 +613,18 @@
 \begin{frame}
     \frametitle{Why not shuffle $S_1 \cup S_2$}
     \begin{block} {Probability}
-        $p(element1=element2) = \frac{|S_1\cap S_2|}{|S_1 \cup S_2|} < \frac{|S_1\cap S_2|}{max(|S_1|,|S_2|)}$
+        $p(e_1=e_2) = \frac{|S_1\cap S_2|}{|S_1 \cup S_2|} < \frac{|S_1\cap S_2|}{max(|S_1|,|S_2|)}$
     \end{block}
     \begin{block} {randomly select in $S_1\cup S_2$: "starvation"}
         if $|S_1| = 99, |S_2| = 1$,
-        then $p(element \in S_1) = 0.99, p(element \in S_2) = 0.01$ \\
+        then $p(e \in S_1) = 0.99, p(e \in S_2) = 0.01$ \\
         So task2 may be starving
     \end{block}
     \begin{block} {shuffle $S_1\cup S_2$: offset}
-        $S_1 = \{3,4\}, S_2 = \{1,3,4\}$\\
-        \{\space \space \space \space 3,4\}\\
-        \{1,2,3,4\} \\
-        \{1,\space \space 3,4\}\\
+        $S_1 = \{2,3\}, S_2 = \{1,2,3\}$\\
+        \{\space \space  2,3\}\\
+        \{1,2,3\} \\
+        \{1,2,3\}\\
     \end{block}
 \end{frame}
 
