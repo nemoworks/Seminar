@@ -230,26 +230,38 @@
 \section{Introduction}
 \begin{frame}
     \frametitle{DataLoader in Pytorch}
+    \begin{block}{Data loading}
+        Assume there is a task training in a dataset with index set
+        \begin{itemize}
+            \item Sampler sample some index randomly
+            \item Worker read the data from disk
+            \item CPU decode them
+            \item GPU load them and training
+        \end{itemize}
+    \end{block}
     \begin{center}
-        \includegraphics[height=6cm]{global_img_dir/2021-03-02_15-33.png}
+        \includegraphics[height=4cm]{global_img_dir/data_pipeline.png}
     \end{center}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Problem: Repeated Reading and Processing}
-    \begin{block}{Situation}
-        To compare the performance of different algorithms, Many DeepLearning tasks are training in the same Dataset.
-    \end{block}
+    \frametitle{Multi task loading data}
     \begin{block}{Problem}
-        Every task has its own DataLoader. So the data will be repeatedly read and processed by different tasks.
+        The data will be repeatedly read and processed by different tasks. \\
+        Dose it matter?
     \end{block}
-    \begin{block}{Result}
-        As the number of tasks increases, so does the training time. And what increases is the time to load the data
-    \end{block}
+    \begin{center}
+        \includegraphics[height=5cm]{global_img_dir/multitask_dataloading.png}
+    \end{center}
 \end{frame}
 
 \begin{frame}
     \frametitle{Experiment}
+    \begin{block}{Configuration}
+        Multiple tasks with worker = 4, batch size = 32 \\
+        are trained at the same time with in a Tesla T4 with 16G memory. \\
+        The server has 512g memory and 48 Intel(R) Xeon(R) Gold 5118 CPU.
+    \end{block}
     \begin{figure}[htbp]
     \centering
     \begin{minipage}[t]{0.48\textwidth}
@@ -265,26 +277,34 @@
     \end{figure}
 \end{frame}
 
-\section{Global DataLoader}
 \begin{frame}
-    \frametitle{Architecture}
+    \frametitle{Idea}
+    \begin{block}{idea}
+        Avoid repeatedly reading and processing:
+        \begin{itemize}
+            \item After shuffle, the data should be read in a similar order
+            \item And there are a global DataLoader to read the same data only once
+        \end{itemize}
+    \end{block}
     \centering
-    \includegraphics[width=12cm]{global_img_dir/archi.png}
+    \includegraphics[width=8cm]{global_img_dir/global_sampling.png}
 \end{frame}
 
+\section{Sampling Alogrithm}
 \begin{frame}
     \frametitle{Sampling: problem description}
     \begin{block}{Defination}
-        For a single task, the sampler needs to select an element from the index set $S$.\\
-        Similarly, for multiple tasks, the sampler needs to select some elements $\{e_1, e_2, ...\}$ from multiple sets $\{S_1, S_2, ...\}$
+        Assume there are two sets $\{S_1, S_2\}$, we should randomly select 2 elements $\{e_1, e_2\}$ from them.
+        The algorithm should to make sure to:
+        \begin{equation}
+            \begin{aligned}
+                & p(e_1) = \frac{1}{|S_1|}\\
+                & p(e_2) = \frac{1}{|S_2|}\\
+                & Maximize ( { p(e_1 = e_2) } )
+            \end{aligned}
+            \end{equation}
     \end{block}
-    \begin{block}{Requirments}
-        \begin{itemize}
-            \item The index in the set $S$ should be randomly sampled. $p(e_i) = \frac{1}{|S_i|}$
-            \item Duplicate indexes need to be merged. Maximize the probability $p(e_i = e_j)$
-            \item There can be no problem of "starvation"
-        \end{itemize}
-    \end{block}
+    
 \end{frame}
 
 \begin{frame}
@@ -295,10 +315,12 @@
         We divide the set $S_1$ into $S_i$ and $S_{d1} = S_1 - S_i$ \\
         We divide the set $S_2$ into $S_i$ and $S_{d2} = S_2 - S_i$
     \end{block}
+    
     \begin{block}{Example}
         $S_1 = \{1,2,3,4,5\} = \{1,2,3\} \cup \{4,5\}$ \\
         $S_2 = \{1,2,3,6,7\} = \{1,2,3\} \cup \{6,7\}$
     \end{block}
+    
 \end{frame}
 
 \begin{frame}
@@ -331,9 +353,22 @@
 
 \begin{frame}
     \frametitle{Dependently Sampling Algorithm I}
-    \begin{block}{Idea}
-        The $step_{13}$ is same as $step_{23}$. We can merge them.
+    \begin{block}{Insight}
+        The $step_{13}$ is same as $step_{23}$ (randomly select an element $e$ from $S_i$).
     \end{block}
+    \begin{block}{Example}
+        $S_1 =  \{1,2,3\} \cup \{4,5\}$; $S_2 = \{1,2,3\} \cup \{6,7\}$
+        \begin{itemize}
+            \item As for $S_1$, select set $\{1,2,3\}$ with probability $p_1(S_i)=0.6$
+            \item As for $S_2$, select set $\{1,2,3\}$ with probability $p_2(S_i)=0.6$
+            \item Finally, randomly sampling element in $\{1,2,3\}$
+            \item $p(e_1 = e_2) = p_1(S_i)*p_2(S_i) = 0.36$
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Dependently Sampling Algorithm I}
     \begin{block}{Algorithm}
         \begin{itemize}
             \item $S_1$:
@@ -351,35 +386,33 @@
             \item $step_{3}$: randomly select a element $e$ from $S_i$
         \end{itemize}
     \end{block}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Dependently Sampling Algorithm I}
     \begin{block}{Probability}
         \begin{equation}
             \begin{aligned}
-                p(e_1) &= \frac{1}{n_1}\\
-                p(e_2) &= \frac{1}{n_2}\\
                 p(e_1 = e_2) &=  \frac{n_i}{n_1}*\frac{n_i}{n_2} = \frac{n_i^2}{n_1*n_2}
             \end{aligned}
         \end{equation}
     \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Dependently Sampling Algorithm I}
+    \begin{block}{Insight}
+        The $step_{11}$ and $step_{21}$ are similar. We can merge them.
+    \end{block}
     \begin{block}{Example}
         $S_1 =  \{1,2,3\} \cup \{4,5\}$; $S_2 = \{1,2,3\} \cup \{6,7\}$
         \begin{itemize}
-            \item As for $S_1$, select set $\{1,2,3\}$ with probability $0.6$
-            \item As for $S_2$, select set $\{1,2,3\}$ with probability $0.6$
-            \item Finally, randomly sampling element in $\{1,2,3\}$
-            \item $p(e_1 = e_2) = 0.6*0.6 = 0.36$
+            \item Firstly, we randomly select a set from $\{1,2,3\}$ and $\{4,5\}$
+            \item If we choose $\{1,2,3\}$, the S1 and S2 will both select an element from $\{1,2,3\}$
+            \item If we choose $\{4,5\}$, then S1 will sampling in $\{4,5\}$ and S2 in $\{6,7\}$
+            \item $p(e_1 = e_2) = p_1(S_i) = 0.6$
         \end{itemize}
     \end{block}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Dependently Sampling Algorithm I}
-    \begin{block}{Idea}
-        The $step_{11}$ and $step_{21}$ are similar. We can merge them.
-    \end{block}
+    \frametitle{Problem}
     \begin{block}{Algorithm}
         \begin{itemize}
             \item $step_{1}$: randomly select a set from $S_i$ and $S_{d1}$
@@ -399,26 +432,20 @@
 \end{frame}
 
 \begin{frame}
-    \frametitle{Problem}
-    \begin{block}{Probability}
-        As for $S_1$:
-        \begin{equation}
-            \begin{aligned}
-                p_1(S_i) &= \frac{n_i}{n_1} \\
-                p_1(S_{d1}) &= 1-\frac{n_i}{n_1}
-            \end{aligned}
-        \end{equation}
-        As for $S_2$:
-        \begin{equation}
-            \begin{aligned}
-                p_2(S_i) &= \frac{n_i}{n_2} \\
-                p_2(S_{d2}) &= 1-\frac{n_i}{n_2}
-            \end{aligned}
-        \end{equation}
+    \frametitle{Problem:$n_1 \neq n_2$}
+    \begin{block}{$n_1 > n_2$}
+        $S_1 =  \{1,2,3\} \cup \{4\}$; $S_2 = \{1,2,3\} \cup \{6,7\}$
+        \begin{itemize}
+            \item $S_1$ select $\{1,2,3\}$ with probability $p_1(S_i) = 0.75$
+            \item Then $S_2$ select an element $e$ from $S_i$ with probability $p_2(e) = p_1(S_i)*\frac{1}{3} = 0.25 > 0.2$
+        \end{itemize}
     \end{block}
-    \begin{block}{Problem}
-        if $n_1 \neq n_2$, \\
-        then $p_1(S_i) \neq p_2(S_i)$ and $p_1(S_{d1}) \neq p_2(S_{d2})$
+    \begin{block}{$n_1 < n_2$}
+        $S_1 =  \{1,2,3\} \cup \{4,6\}$; $S_2 = \{1,2,3\} \cup \{7\}$
+        \begin{itemize}
+            \item $S_1$ select $\{4,6\}$ with probability $p_1(S_{d1}) = 0.4$
+            \item Then $S_2$ select an element $e$ from $S_{d2}$ with probability $p_2(e) = p_1(S_{d1})*\frac{1}{1} = 0.4 > 0.25$
+        \end{itemize}
     \end{block}
 \end{frame}
 
@@ -433,15 +460,17 @@
     \end{block}
     \begin{block}{Approach}
         So in $step_1$, when select $S_i$, it should be changed $S_{d2}$ in probability of $p$. \\
-        The equation is 
         \begin{equation}
+            \left\{
             \begin{aligned}
-                p_2(S_i) &= p_1(S_i)*(1-p) = \frac{n_i}{n_2} \\
-                p_2(S_{d2}) &= p_2(S_{d1})+p_1(S_i)*{p} = 1-\frac{n_i}{n_2}
+                    p_2(S_i) &= p_1(S_i)*(1-p) = \frac{n_i}{n_2} \\
+                    p_2(S_{d2}) &= p_2(S_{d1})+p_1(S_i)*{p} = 1-\frac{n_i}{n_2} \\
             \end{aligned}
+            \right. 
         \end{equation}
-        then
-        $$p = 1-\frac{n_1}{n_2}$$
+        \begin{equation}
+            p = 1-\frac{n_1}{n_2}
+        \end{equation}
     \end{block}
 \end{frame}
 
@@ -468,10 +497,7 @@
             \item $step_{3}$: randomly select a element $e$ from $S_i$
         \end{itemize}
     \end{block}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Dependently Sampling Algorithm II}
+    
     \begin{block}{Probability}
         % If in $step_1$, the selected set $S = S_i$, and $p_1(S_i) = \frac{n_i}{n_1}$
         % $$
@@ -485,15 +511,6 @@
         $$
             p(e_1 = e_2) = p_1(S_i)*(\frac{n_1}{n_2}) = \frac{n_i}{n_2}
         $$
-    \end{block}
-    \begin{block}{Example}
-        $S_1 =  \{1,2,3\} \cup \{4\}$; $S_2 = \{1,2,3\} \cup \{6,7\}$
-        \begin{itemize}
-            \item In $step_1$, select set $\{1,2,3\}$ with probability $\frac{3}{4} = 0.75$
-            \item Then as for $S_2$, select set $\{1,2,3\}$ with probability $\frac{4}{5}=0.8$
-            \item Finally, randomly sampling element in $\{1,2,3\}$
-            \item $p(e_1 = e_2) = 0.75*0.8=0.6$
-        \end{itemize}
     \end{block}
 \end{frame}
 
@@ -509,14 +526,17 @@
     \begin{block}{Approach}
         So in $step_1$, when select $S_{d1}$, it should be changed $S_{i}$ in probability of $p$. \\
         The equation is 
-        \begin{equation}
-            \begin{aligned}
-                p_2(S_i) &= p_1(S_i)+p_2(S_{d1})*p = \frac{n_i}{n_2} \\
-                p_2(S_{d2}) &= p_2(S_{d1})*(1-p) = 1-\frac{n_i}{n_2}
-            \end{aligned}
-        \end{equation}
-        then
-        $$p = 1-\frac{n1*(n2-n_i)}{n2*(n1-n_i)}$$
+            \begin{equation}
+                \left\{
+                \begin{aligned}
+                    p_2(S_i) &= p_1(S_i)+p_2(S_{d1})*p = \frac{n_i}{n_2} \\
+                    p_2(S_{d2}) &= p_2(S_{d1})*(1-p) = 1-\frac{n_i}{n_2}
+                \end{aligned}
+                \right. 
+            \end{equation}
+            \begin{equation}
+                p = 1-\frac{n1*(n2-n_i)}{n2*(n1-n_i)}
+            \end{equation}
     \end{block}
 \end{frame}
 
@@ -543,10 +563,6 @@
             \item $step_{3}$: randomly select a element $e$ from $S_i$
         \end{itemize}
     \end{block}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Dependently Sampling Algorithm II}
     \begin{block}{Probability}
         % If in $step_1$, the selected set $S = S_i$
         % $$
@@ -561,6 +577,11 @@
             p(e_1 = e_2) = p_1(S_i) = \frac{n_i}{n_1}
         $$
     \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Dependently Sampling Algorithm II}
+    
     \begin{block}{Example}
         $S_1 =  \{1,2,3\} \cup \{4,5\}$; $S_2 = \{1,2,3\} \cup \{6\}$
         \begin{itemize}
@@ -571,44 +592,6 @@
         \end{itemize}
     \end{block}
 \end{frame}
-
-% \begin{frame}
-%     \frametitle{Dependently Sampling Algorithm II}
-%     \begin{block} {step1}
-%         $step_{1}$: randomly select a set $S$ from $S_i$ and $S_{d1}$
-%     \end{block}
-%     \begin{block}{$step_2: S_1$}
-%         \begin{itemize}
-%             \item $step_{12}$: if the $S$ is $S_{d1}$, randomly select a element1 from $S_{d1}$
-%             \item $step_{13}$: if the $S$ is $S_i$, go to $step_{3}$
-        
-%             \item $step_{3}$: randomly select a element from $S_i$
-%         \end{itemize}
-%     \end{block}
-%     \begin{block}{$step_2:S_2$}
-%         \begin{itemize}
-%             \item $step_{22}$:
-%             \begin{itemize}
-%                 \item if $n_1 > n_2$:
-%                 \begin{itemize}
-%                     \item 
-%                 \end{itemize}
-%                 % \begin{itemize}
-%                     % \item 
-%                 % \item randomly let $S = S_{d1}$ in probability of $1-\frac{n_1}{n_2}$
-%                 % \item if $S$ is $S_{d2}$, randomly select a element2 from $S_{d2}$
-%                 % \item if $S$ is $S_i$, go to $step_{3}$
-%                 % \end{itemize}
-%             \end{itemize}
-%             \item $step_{23}$: if the $S$ is $S_i$
-%             \begin{itemize}
-%                 \item randomly let $S = S_{d1}$ in probability of $1-\frac{n_1}{n_2}$
-%                 \item if $S$ is $S_{d2}$, randomly select a element2 from $S_{d2}$
-%                 \item if $S$ is $S_i$, go to $step_{3}$
-%             \end{itemize}
-%         \end{itemize}
-%     \end{block}
-% \end{frame}
 
 \begin{frame}
     \frametitle{Why not shuffle $S_1 \cup S_2$}
@@ -698,11 +681,37 @@
     \end{figure}
 \end{frame}
 
+
+
+\section{Global DataLoader}
+\begin{frame}
+    \frametitle{Architecture}
+    \centering
+    \includegraphics[width=12cm]{global_img_dir/archi.png}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Server and Loader}
+    \begin{block}{Server}
+        \begin{itemize}
+            \item recieve task <task name, index set> and return head address
+            \item hearbeat
+        \end{itemize}
+    \end{block}
+    \begin{block}{Loader}
+        \begin{itemize}
+            \item check Buffer Pool2
+            \item if miss, read from disk
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+
 \begin{frame}
     \frametitle{Buffer Pool: Data Structure}
     \begin{block} {data}
         \begin{itemize}
-            \item There are two kinds of nodes: inode and datanode
+            \item There are two kinds of nodes: inode and datanode, and they are fixed size.
             \item Every task has a head inode address
         \end{itemize}
     \end{block}
@@ -714,68 +723,26 @@
     \frametitle{Buffer Pool: Valid Byte}
     \begin{block} {valid byte}
         \begin{itemize}
-            \item data bit: If the data bit is equal to 1, the data addr is valid. Otherwise invalid
-            \item next bit: If the next bit is equal to 1, the next addr is valid. Otherwise invalid
-            \item used bit: If the used bit is equal to 1, this inode is used by some tasks
+            \item used bit: If the used bit is equal to 1, this inode is used
+            \item next bit: If the next bit is equal to 1, the next addr is valid
+            \item data bit: If the data bit is equal to 1, the data addr is valid
         \end{itemize}
     \end{block}
+    \centering
+    \includegraphics[width=10cm]{global_img_dir/automata.png}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Buffer Pool: Automata}
-    \begin{block} {valid byte}
-        | used bit | next bit | data bit |
+    \frametitle{Buffer Pool: Evict}
+    \begin{block} {inode}
+        if used bit is equal to 0, then it can be evited
     \end{block}
-    \centering
-    \includegraphics[width=12cm]{global_img_dir/automata.png}
-\end{frame}
-
-
-\begin{frame}[fragile]
-    \frametitle{Buffer Pool: allocate inode}
-    
-        \begin{block} {case1}
-            There is enough free space to allocate
-        \end{block}
-        \begin{lstlisting}[language=python]
-    if inode_tail + inode_size > data_head:
-        return inode_tail
-        \end{lstlisting}
-
-        \begin{block} {case2}
-            Free Some unused inode
-        \end{block}
-        \begin{lstlisting}[language=python]
-    for head in all_heads:
-        if check_free(head) is True:
-            return head
-        \end{lstlisting}
-        
-\end{frame}
-
-\begin{frame}[fragile]
-    \frametitle{Buffer Pool: allocate data node}
-    \begin{block} {case1}
-        There is enough free space to allocate
+    \begin{block} {data node}
+        if all reference nodes of datanode is unused, then it can be evited to Buffer Pool2
     \end{block}
-    \begin{lstlisting}[language=python]
-if inode_tail + inode_size > data_head:
-    return inode_tail
-    \end{lstlisting}
-
-    \begin{block} {case2}
-        Free Some unused datanode
+    \begin{block} {Buffer Pool 2}
+        LRU
     \end{block}
-    \begin{lstlisting}[language=python]
-free = True
-for datanode in all_datanodes:
-    for ref in refs of datanode:
-        if databit(ref) == 0 && dataaddr(ref) == datanode:
-            free = False
-            break
-    if free is True:
-        return datanode
-    \end{lstlisting}
 \end{frame}
 
 \section{Experiment}
