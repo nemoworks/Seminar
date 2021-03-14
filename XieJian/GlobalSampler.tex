@@ -580,20 +580,6 @@
 \end{frame}
 
 \begin{frame}
-    \frametitle{Dependently Sampling Algorithm II}
-    
-    \begin{block}{Example}
-        $S_1 =  \{1,2,3\} \cup \{4,5\}$; $S_2 = \{1,2,3\} \cup \{6\}$
-        \begin{itemize}
-            \item In $step_1$, select set $\{1,2,3\}$ with probability $\frac{3}{5} = 0.6$
-            \item Then $S_2$ must select $\{1,2,3\}$
-            \item Finally, randomly sampling element in $\{1,2,3\}$
-            \item $p(e_1 = e_2) = 0.6$
-        \end{itemize}
-    \end{block}
-\end{frame}
-
-\begin{frame}
     \frametitle{Why not shuffle $S_1 \cup S_2$}
     \begin{block} {Probability}
         $p(e_1=e_2) = \frac{|S_1\cap S_2|}{|S_1 \cup S_2|} < \frac{|S_1\cap S_2|}{max(|S_1|,|S_2|)}$
@@ -612,76 +598,71 @@
 \end{frame}
 
 \begin{frame}
-    \frametitle{Sampling Tree}
-    \begin{block} {Attributes}
+    \frametitle{Sampling Tree: two sets}
+    \begin{block} {Algorithm}
         \begin{itemize}
-            \item There are two sets $S_1, S_2$ and $n_1 > n_2$
-            \item $S_a = S_a\cap S_b$, whose length is $n_a$
-            \item $S_b = S_1- S_a$, whose length is $n_b$
-            \item $S_c = S_2- S_a$, whose length is $n_c$
+            \item case1: Both randomly sample in $S_1\cap S_2$
+            \begin{itemize}
+                \item $p_1 < \frac{n_i}{n_1}$
+                \item $p_2 < \frac{n_1}{n_2}$
+            \end{itemize}
+            \item case2: For $S_1$, sample in $S_1\cap S_2$. For $S_2$, sample in $S_2-S_1$
+            \begin{itemize}
+                \item $p_1 < \frac{n_i}{n_1}$
+                \item $p_2 > \frac{n_1}{n_2}$
+            \end{itemize}
+            \item case3: For $S_1$, sample in $S_1 - S_2$. For $S_2$, sample in $S_2-S_1$
+            \begin{itemize}
+                \item $p_1 > \frac{n_i}{n_1}$
+            \end{itemize}
         \end{itemize}
     \end{block}
     \centering
-    \includegraphics[width=5cm]{global_img_dir/SamplingTree1.png}
+    \includegraphics[width=4cm]{global_img_dir/SamplingTree2.png}
 \end{frame}
 
 \begin{frame}
-    \frametitle{case1 and case2}
-    \begin{block}{Algorithm}
+    \frametitle{Sampling Tree: n sets}
+    \begin{block} {Algorithm: parent node}
+        There are two sets: $S_{child}, S_{parent}$.
         \begin{itemize}
-            \item case1: $p_1 \leq n_a/n_1$  and  $p_2 \leq n1/n_2$
-            \begin{itemize}
-                \item $S_a = S_a - \{a\}$
-            \end{itemize}
-            \item case2: $p_1 > n_a/n_1$:
-            \begin{itemize}
-                \item $S_b = S_a - \{b\}$
-                \item $S_c = S_c - \{c\}$
-            \end{itemize}
-        \end{itemize} 
+            \item $p_1 < \frac{n_a}{n_1}, S_{parent} = S_{parent}\cup S_1$\\
+            \dots\dots
+            \item $p_j > \frac{n_{j-1}}{n_j}, S_{child} = S_{child}\cup S_j$
+            \item $p_{j+1} < \frac{n_{j-1}}{n_{j+1}}, S_{parent} = S_{parent}\cup S_{j+1}$
+        \end{itemize}
     \end{block}
-    \begin{figure}[htbp]
-        \centering
-        \begin{minipage}[t]{0.48\textwidth}
-        \centering
-        \includegraphics[width=3cm]{global_img_dir/Sampling1.png}
-        \caption{case1}
-        \end{minipage}
-        \begin{minipage}[t]{0.48\textwidth}
-        \centering
-        \includegraphics[width=3cm]{global_img_dir/Sampling2.png}
-        \caption{case2}
-        \end{minipage}
-    \end{figure}
+    \centering
+    \includegraphics[width=7cm]{global_img_dir/SamplingTreek.png}
 \end{frame}
 
 \begin{frame}
-    \frametitle{case3 and case4}
-    \begin{block}{Algorithm}
-        \begin{itemize}
-            \item case3: $p_1 \leq n_a/n_1$  and  $p_2 > n1/n_2$
-            \begin{itemize}
-                \item $S_b = S_b - \{b\}$
-                \item $S_c = S_c \cup \{a\} - \{c\}$
-            \end{itemize}
-        \end{itemize} 
-    \end{block}
-    \begin{figure}[htbp]
-        \centering
-        \begin{minipage}[t]{0.48\textwidth}
-        \centering
-        \includegraphics[width=3cm]{global_img_dir/Sampling3.png}
-        \caption{impossible}
-        \end{minipage}
-        \begin{minipage}[t]{0.48\textwidth}
-        \centering
-        \includegraphics[width=3cm]{global_img_dir/Sampling4.png}
-        \caption{case3}
-        \end{minipage}
-    \end{figure}
+    \frametitle{Prove}
+        Basis: For two sets $\{S_1, S_2\}$: 
+        \begin{equation}
+            \begin{aligned}
+                p(e_1) = \frac{1}{|S_1|}, p(e_1) = \frac{1}{|S_2|}\\
+                p(e1=e2) = \frac{1}{max(|S_1|,|S_2|)}
+            \end{aligned}
+        \end{equation}
+        
+        Induction: \\
+        If $\{S_1, S_2, ... S_k\}$ satisfies: 
+        \begin{equation}
+            \begin{aligned}
+                \forall i, p(e_i) &= \frac{1}{|S_i|}\\
+                \forall i,j , p(e_i=e_j) &= \frac{1}{max(|S_i|,|S_j|)}
+            \end{aligned}
+        \end{equation}
+        then $\{S_1, S_2, ... S_k, S_{k+1}\}$ sets is also satisfies
+
 \end{frame}
 
-
+\begin{frame}
+    \frametitle{Induction}
+    \centering
+    \includegraphics[width=8cm]{global_img_dir/Inser.png}
+\end{frame}
 
 \section{Global DataLoader}
 \begin{frame}
