@@ -229,14 +229,12 @@
 
 \section{Introduction}
 \begin{frame}
-    \frametitle{DataLoader in Pytorch}
+    \frametitle{Introduction}
     \begin{block}{Data loading}
-        Assume there is a task training in a dataset with index set
         \begin{itemize}
             \item Sampler sample some index randomly
-            \item Worker read the data from disk
-            \item CPU decode them
-            \item GPU load them and training
+            \item Worker read the data from disk and decode them
+            \item Task fecth data and start training
         \end{itemize}
     \end{block}
     \begin{center}
@@ -245,50 +243,71 @@
 \end{frame}
 
 \begin{frame}
-    \frametitle{Multi task loading data}
+    \frametitle{Problem}
     \begin{block}{Problem}
-        The data will be repeatedly read and processed by different tasks. \\
-        Dose it matter?
+        The data will be repeatedly read and processed by different tasks.
     \end{block}
-    \begin{center}
-        \includegraphics[height=5cm]{global_img_dir/multitask_dataloading.png}
-    \end{center}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Experiment}
     \begin{block}{Configuration}
         Multiple tasks with worker = 4, batch size = 32 \\
-        are trained at the same time with in a Tesla T4 with 16G memory. \\
-        The server has 512g memory and 48 Intel(R) Xeon(R) Gold 5118 CPU.
+        GPU: Tesla T4 with 16G memory, CPU: 48 Intel(R) Xeon(R) Gold 5118\\
     \end{block}
     \begin{figure}[htbp]
     \centering
     \begin{minipage}[t]{0.48\textwidth}
     \centering
-    \includegraphics[width=6cm]{global_img_dir/l.jpg}
+    \includegraphics[width=5cm]{global_img_dir/l.jpg}
     \caption{data loading time}
     \end{minipage}
     \begin{minipage}[t]{0.48\textwidth}
     \centering
-    \includegraphics[width=6cm]{global_img_dir/b.jpg}
+    \includegraphics[width=5cm]{global_img_dir/b.jpg}
     \caption{data training time}
     \end{minipage}
     \end{figure}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Idea}
-    \begin{block}{idea}
-        Avoid repeatedly reading and processing:
+    \frametitle{Optimization}
+    \begin{block}{Global Buffer Pool}
         \begin{itemize}
-            \item After shuffle, the data should be read in a similar order
-            \item And there are a global DataLoader to read the same data only once
+            \item If data in buffer pool, there is no need to read data from disk
         \end{itemize}
     \end{block}
     \centering
-    \includegraphics[width=8cm]{global_img_dir/global_sampling.png}
+    \includegraphics[width=8cm]{global_img_dir/global_buffer.png}
 \end{frame}
+
+\begin{frame}
+    \frametitle{Problem}
+    \begin{columns}
+        \begin{column}{0.48\textwidth}
+            \begin{itemize}
+                \item Random replacement algorithm
+            \end{itemize}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=6cm]{global_img_dir/random_hit_rate.png}
+                \caption{hit rate with buffer size}
+            \end{figure}
+        \end{column}
+    
+    \end{columns}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Optimization}
+    \begin{block}{Global Sampler}
+        \begin{itemize}
+            \item Make the sampled elements have a greater probability of being equal
+        \end{itemize}
+    \end{block}
+    \centering
+    \includegraphics[width=8cm]{global_img_dir/global_sampling2.png}
+\end{frame}
+
 
 \section{Sampling Alogrithm}
 \begin{frame}
@@ -313,7 +332,8 @@
         There are two sets: $S_1, S_2$, and their length is $n_1, n_2$ \\
         The intersection set of them is $S_i$, whose length is $n_i$ \\
         We divide the set $S_1$ into $S_i$ and $S_{d1} = S_1 - S_i$ \\
-        We divide the set $S_2$ into $S_i$ and $S_{d2} = S_2 - S_i$
+        We divide the set $S_2$ into $S_i$ and $S_{d2} = S_2 - S_i$ \\
+        Sample(S): randomly select an element in S
     \end{block}
     
     \begin{block}{Example}
@@ -325,43 +345,85 @@
 
 \begin{frame}
     \frametitle{Independently Sampling Algorithm}
-    \begin{block}{Algorithm}
-        \begin{itemize}
-            \item $S_1$:
+    \begin{columns}
+        \begin{column}{0.48\textwidth}
+            \begin{alertblock}{S1}
+                \begin{itemize}
+                    \item $step_{11}$:randomly select a set from $S_i$ and $S_{d1}$
+                    \item $step_{21}$:if $S_{d1}$, $e_1$=Sample($S_{d1}$)
+                    \item $step_{31}$:if $S_i$, $e_1$=Sample($S_{i}$)
+                \end{itemize}
+            \end{alertblock}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+        \begin{alertblock}{S2}
             \begin{itemize}
-                \item $step_{11}$: randomly select a set from $S_i$ and $S_{d1}$
-                \item $step_{12}$: if the set is $S_{d1}$, randomly select a element $e_1$ from $S_{d1}$
-                \item $step_{13}$: if the set is $S_i$, randomly select a element $e_1$ from $S_i$
+                \item $step_{12}$:randomly select a set from $S_i$ and $S_{d2}$
+                \item $step_{22}$:if $S_{d2}$, $e_2$=Sample($S_{d2}$)
+                \item $step_{32}$:if $S_i$, $e_2$=Sample($S_{i}$)
             \end{itemize}
-            \item $S_2$:
-            \begin{itemize}
-                \item $step_{21}$: randomly select a set from $S_i$ and $S_{d2}$
-                \item $step_{22}$: if the set is $S_{d2}$, randomly select a element $e_2$ from $S_{d2}$
-                \item $step_{23}$: if the set is $S_i$, randomly select a element $e_2$ from $S_i$
-            \end{itemize}
-        \end{itemize}
-    \end{block}
+        \end{alertblock}
+        \end{column}
+    
+    \end{columns}
+
     \begin{block}{Probability}
-        \begin{equation}
-            \begin{aligned}
-                p(e_1) = \frac{1}{n_1},p(e_2) = \frac{1}{n_2}\\
-                p(e_1 = e_2) = \frac{n_i}{n_1*n_2}
-            \end{aligned}
-        \end{equation}
+    \begin{equation}
+        \begin{aligned}
+            p(e_1 = e_2) = \frac{n_i}{n_1*n_2}
+        \end{aligned}
+    \end{equation}
     \end{block}
 \end{frame}
+
+% \begin{frame}
+%     \frametitle{Independently Sampling Algorithm}
+%     % \begin{block}{Algorithm}
+%         % \begin{itemize}
+%             \begin{columns}
+%             \begin{column}{0.5\textwidth}
+%             % \item $S_1$:
+%             fdfd
+%             % \begin{itemize}
+%             %     \item $step_{11}$: randomly select a set from $S_i$ and $S_{d1}$
+%             %     \item $step_{12}$: if the set is $S_{d1}$, randomly select a element $e_1$ from $S_{d1}$
+%             %     \item $step_{13}$: if the set is $S_i$, randomly select a element $e_1$ from $S_i$
+%             % \end{itemize}
+%             \end{column}
+%             \begin{column}{0.5\textwidth}
+%                 dsdsds
+%             % \item $S_2$:
+%             % \begin{itemize}
+%             %     \item $step_{21}$: randomly select a set from $S_i$ and $S_{d2}$
+%             %     \item $step_{22}$: if the set is $S_{d2}$, randomly select a element $e_2$ from $S_{d2}$
+%             %     \item $step_{23}$: if the set is $S_i$, randomly select a element $e_2$ from $S_i$
+%             % \end{itemize}
+%             \end{column}
+%             \end{columns}
+%         % \end{itemize}
+%     \end{block}
+%     \begin{block}{Probability}
+%         \begin{equation}
+%             \begin{aligned}
+%                 p(e_1) = \frac{1}{n_1},p(e_2) = \frac{1}{n_2}\\
+%                 p(e_1 = e_2) = \frac{n_i}{n_1*n_2}
+%             \end{aligned}
+%         \end{equation}
+%     \end{block}
+% \end{frame}
 
 \begin{frame}
     \frametitle{Dependently Sampling Algorithm I}
     \begin{block}{Insight}
-        The $step_{13}$ is same as $step_{23}$ (randomly select an element $e$ from $S_i$).
+        The $step_{31}$ is same as $step_{32}$ (randomly select an element $e$ from $S_i$).
     \end{block}
     \begin{block}{Example}
         $S_1 =  \{1,2,3\} \cup \{4,5\}$; $S_2 = \{1,2,3\} \cup \{6,7\}$
         \begin{itemize}
-            \item As for $S_1$, select set $\{1,2,3\}$ with probability $p_1(S_i)=0.6$
-            \item As for $S_2$, select set $\{1,2,3\}$ with probability $p_2(S_i)=0.6$
-            \item Finally, randomly sampling element in $\{1,2,3\}$
+            \item Firstly, randomly sampling element $e_i$ in $\{1,2,3\}$
+            \item As for $S_1$, if select set $\{1,2,3\}$ with probability $p_1(S_i)=0.6$, then we can let $e_1 = e_i$
+            \item As for $S_2$, select set $\{1,2,3\}$ with probability $p_2(S_i)=0.6$, then we can let $e_2 = e_i$
             \item $p(e_1 = e_2) = p_1(S_i)*p_2(S_i) = 0.36$
         \end{itemize}
     \end{block}
@@ -371,21 +433,30 @@
     \frametitle{Dependently Sampling Algorithm I}
     \begin{block}{Algorithm}
         \begin{itemize}
-            \item $S_1$:
-            \begin{itemize}
-                \item $step_{11}$: randomly select a set from $S_i$ and $S_{d1}$
-                \item $step_{12}$: if the set is $S_{d1}$, randomly select a element $e_1$ from $S_{d1}$
-                \item $step_{13}$: if the set is $S_i$, go to $step_{3}$
-            \end{itemize}
-            \item $S_2$:
-            \begin{itemize}
-                \item $step_{21}$: randomly select a set from $S_i$ and $S_{d2}$
-                \item $step_{22}$: if the set is $S_{d2}$, randomly select a element $e_2$ from $S_{d2}$
-                \item $step_{23}$: if the set is $S_i$, go to $step_{3}$
-            \end{itemize}
-            \item $step_{3}$: randomly select a element $e$ from $S_i$
+            \item $step_{0}$: $e_i$ = Sample($S_i$)
         \end{itemize}
+        \begin{columns}
+        \begin{column}{0.5\textwidth}
+            \begin{alertblock}{S1}
+                \begin{itemize}
+                    \item $step_{11}$:randomly select a set from $S_i$ and $S_{d1}$
+                    \item $step_{21}$:if $S_{d1}$,$e_1$ = Sample($S_{d1}$)
+                    \item $step_{31}$:if $S_i$, $e_1$ = $e_i$
+                \end{itemize}
+            \end{alertblock}
+            \end{column}
+            \begin{column}{0.5\textwidth}
+            \begin{alertblock}{S2}
+                \begin{itemize}
+                    \item $step_{12}$:randomly select a set from $S_i$ and $S_{d2}$
+                    \item $step_{22}$:if $S_{d2}$, $e_2$ = Sample($S_{d2}$)
+                    \item $step_{32}$:if $S_i$, $e_2$ = $e_i$
+                \end{itemize}
+            \end{alertblock}
+            \end{column}
+        \end{columns}
     \end{block}
+
     \begin{block}{Probability}
         \begin{equation}
             \begin{aligned}
@@ -398,7 +469,7 @@
 \begin{frame}
     \frametitle{Dependently Sampling Algorithm I}
     \begin{block}{Insight}
-        The $step_{11}$ and $step_{21}$ are similar. We can merge them.
+        The $step_{11}$ and $step_{12}$ are similar. We can merge them.
     \end{block}
     \begin{block}{Example}
         $S_1 =  \{1,2,3\} \cup \{4,5\}$; $S_2 = \{1,2,3\} \cup \{6,7\}$
@@ -412,21 +483,29 @@
 \end{frame}
 
 \begin{frame}
-    \frametitle{Problem}
+    \frametitle{Dependently Sampling Algorithm II}
     \begin{block}{Algorithm}
         \begin{itemize}
+            \item $step_{0}$: $e_i$ = Sample($S_i$)
             \item $step_{1}$: randomly select a set from $S_i$ and $S_{d1}$
-            \item $S_1$:
-            \begin{itemize}
-                \item $step_{12}$: if the set is $S_{d1}$, randomly select a element $e_1$ from $S_{d1}$
-                \item $step_{13}$: if the set is $S_i$, go to $step_{3}$
-            \end{itemize}
-            \item $S_2$:
-            \begin{itemize}
-                \item $step_{22}$: if the set is not $S_{d1}$, randomly select a element $e_2$ from $S_{d2}$
-                \item $step_{23}$: if the set is $S_i$, go to $step_{3}$
-            \end{itemize}
-            \item $step_{3}$: randomly select a element $e$ from $S_i$
+            \begin{columns}
+                \begin{column}{0.48\textwidth}
+                    \begin{alertblock}{S1}
+                        \begin{itemize}
+                            \item $step_{21}$: if $S_{d1}$,$e_1$=Sample($S_{d1}$)
+                            \item $step_{31}$: if $S_i$, $e_1=e_i$
+                        \end{itemize}
+                    \end{alertblock}
+                    \end{column}
+                    \begin{column}{0.48\textwidth}
+                    \begin{alertblock}{S2}
+                        \begin{itemize}
+                            \item $step_{22}$: if $S_{d1}$,$e_2$=Sample($S_{d2}$)
+                            \item $step_{32}$: if $S_i$, $e_2=e_i$
+                        \end{itemize}
+                    \end{alertblock}
+                \end{column}
+            \end{columns}
         \end{itemize}
     \end{block}
 \end{frame}
@@ -478,23 +557,31 @@
     \frametitle{Dependently Sampling Algorithm II}
     \begin{block}{Algorithm}
         \begin{itemize}
-            \item $step_{1}$: randomly select a set $S$ from $S_i$ and $S_{d1}$
-            \item $S_1$:
-            \begin{itemize}
-                \item $step_{12}$: if the $S$ is $S_{d1}$, randomly select a element $e_1$ from $S_{d1}$
-                \item $step_{13}$: if the $S$ is $S_i$, go to $step_{3}$
-            \end{itemize}
-            \item $S_2$:
-            \begin{itemize}
-                \item $step_{22}$: if the $S$ is $S_{d2}$, randomly select a element $e_2$ from $S_{d2}$
-                \item $step_{23}$: if the $S$ is $S_i$
-                \begin{itemize}
-                    \item randomly let $S = S_{d1}$ in probability of $1-\frac{n_1}{n_2}$
-                    \item if $S$ is $S_{d2}$, randomly select a element $e_2$ from $S_{d2}$
-                    \item if $S$ is $S_i$, go to $step_{3}$
-                \end{itemize}
-            \end{itemize}
-            \item $step_{3}$: randomly select a element $e$ from $S_i$
+            \item $step_{0}$: $e_i$ = Sample($S_i$)
+            \item $step_{1}$: randomly select a set from $S_i$ and $S_{d1}$
+            \begin{columns}
+                \begin{column}{0.48\textwidth}
+                    \begin{alertblock}{S1}
+                        \begin{itemize}
+                            \item $step_{21}$:if $S_{d1}$, $e_1$=Sample($S_{d1}$)
+                            \item $step_{31}$:if $S_i$, $e_1 = e_i$
+                        \end{itemize}
+                    \end{alertblock}
+                    \end{column}
+                    \begin{column}{0.48\textwidth}
+                    \begin{alertblock}{S2}
+                        \begin{itemize}
+                            \item $step_{22}$: if $S_{d1}$, $e_2$=Sample($S_{d2}$)
+                            \item $step_{32}$: if $S_i$:
+                            \begin{itemize}
+                                \item let $S = S_{d1}$ in probability of $1-\frac{n_1}{n_2}$
+                                \item if $S_{d1}$, $e_2$=Sample($S_{d2}$)
+                                \item if $S_i$, $e_2 = e_i$
+                            \end{itemize}
+                        \end{itemize}
+                    \end{alertblock}
+                \end{column}
+            \end{columns}
         \end{itemize}
     \end{block}
     
@@ -543,24 +630,33 @@
 \begin{frame}
     \frametitle{Dependently Sampling Algorithm II}
     \begin{block}{Algorithm}
+
         \begin{itemize}
-            \item $step_{1}$: randomly select a set $S$ from $S_i$ and $S_{d1}$
-            \item $S_1$:
-            \begin{itemize}
-                \item $step_{12}$: if the $S$ is $S_{d1}$, randomly select a element $e_1$ from $S_{d1}$
-                \item $step_{13}$: if the $S$ is $S_i$, go to $step_{3}$
-            \end{itemize}
-            \item $S_2$:
-            \begin{itemize}
-                \item $step_{22}$: if the $S$ is $S_{d2}$, randomly select a element $e_2$ from $S_{d2}$
-                \begin{itemize}
-                    \item randomly let $S = S_{i}$ in probability of $1-\frac{n1*(n2-n_i)}{n2*(n1-n_i)}$
-                    \item if $S$ is $S_{d2}$, randomly select a element $e_2$ from $S_{d2}$
-                    \item if $S$ is $S_i$, randomly select a element $e_2$ from $S_{i}$
-                \end{itemize}
-                \item $step_{23}$: if the $S$ is $S_i$, go to $step_3$
-            \end{itemize}
-            \item $step_{3}$: randomly select a element $e$ from $S_i$
+            \item $step_{0}$: $e_i$ = Sample($S_i$)
+            \item $step_{1}$: randomly select a set from $S_i$ and $S_{d1}$
+            \begin{columns}
+                \begin{column}{0.48\textwidth}
+                    \begin{alertblock}{S1}
+                        \begin{itemize}
+                            \item $step_{21}$:if $S_{d1}$, $e_1$=Sample($S_{d1}$)
+                            \item $step_{31}$:if $S_i$, $e_1 = e_i$
+                        \end{itemize}
+                    \end{alertblock}
+                    \end{column}
+                    \begin{column}{0.48\textwidth}
+                    \begin{alertblock}{S2}
+                        \begin{itemize}
+                            \item $step_{22}$: if $S_{d1}$:
+                            \begin{itemize}
+                                \item let $S = S_{i}$ in probability of $1-\frac{n1*(n2-n_i)}{n2*(n1-n_i)}$
+                                \item if $S_{d1}$, $e_2$=Sample($S_{d2}$)
+                                \item if $S_i$, $e_2 = e_i$
+                            \end{itemize}
+                            \item $step_{32}$: if $S_i$, $e_2 = e_i$
+                        \end{itemize}
+                    \end{alertblock}
+                \end{column}
+            \end{columns}
         \end{itemize}
     \end{block}
     \begin{block}{Probability}
@@ -597,71 +693,167 @@
     \end{block}
 \end{frame}
 
+
 \begin{frame}
-    \frametitle{Sampling Tree: two sets}
-    \begin{block} {Algorithm}
-        \begin{itemize}
-            \item case1: Both randomly sample in $S_1\cap S_2$
+    \frametitle{Sampling Tree: there are two sets: $S_1, S_2$}
+    \begin{columns}
+        \begin{column}{0.48\textwidth}
             \begin{itemize}
-                \item $p_1 < \frac{n_i}{n_1}$
-                \item $p_2 < \frac{n_1}{n_2}$
+                \item $A = S_1\cap S_2$
+                \item $B = S_1- A$
+                \item $A = S_2\cap A$
             \end{itemize}
-            \item case2: For $S_1$, sample in $S_1\cap S_2$. For $S_2$, sample in $S_2-S_1$
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=6cm]{global_img_dir/st1.png}
+                \caption{Sampling Tree}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Sampling Tree: insert $S_3$}
+    \begin{columns}
+        \begin{column}{0.48\textwidth}
             \begin{itemize}
-                \item $p_1 < \frac{n_i}{n_1}$
-                \item $p_2 > \frac{n_1}{n_2}$
+                \item $A \subset S_3$
+                \item Insert $\{S_3: l_3\}$ in $A$ ascending order
+                \item $S_3 = S_3 - A$
+                \item Insert $S_3$ in subtree that has the largest intersection with $S_3$
             \end{itemize}
-            \item case3: For $S_1$, sample in $S_1 - S_2$. For $S_2$, sample in $S_2-S_1$
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=6cm]{global_img_dir/insert1.png}
+                \caption{Sampling Tree}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Sampling Tree: Insert $S_3$}
+    \begin{columns}
+        \begin{column}{0.48\textwidth}
             \begin{itemize}
-                \item $p_1 > \frac{n_i}{n_1}$
+                \item $B \not\subset S_3$
+                \item Create new node: $D = S_3 \cap B$
+                \item $E = B-D$
+                \item $F = S_3-D$
             \end{itemize}
-        \end{itemize}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=6cm]{global_img_dir/insert2.png}
+                \caption{Sampling Tree}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Sampling Tree: Delete $S_3$}
+    \begin{columns}
+        \begin{column}{0.48\textwidth}
+            \begin{itemize}
+                \item Delete $S_3$ in root
+                \item Recursively let the subtree delete $S_3$
+                \item Until reaching the leaf node, then delete it
+                \item The corresponding parent node merges the child nodes
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=6cm]{global_img_dir/delete1.png}
+                \caption{Sampling Tree}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Sampling Tree: Sampling in root}
+    \begin{columns}
+        \begin{column}{0.48\textwidth}
+            \begin{itemize}
+                \item Split U into $parent$ and $child$
+                \begin{itemize}
+                    \item $p < \frac{l_a}{l_1}, parent \cup \{S1\}$
+                    \item ......
+                    \item $p > \frac{l_i}{l_{i+1}}, child \cup \{S_i, S_{i+1}, ... \}$
+                \end{itemize}
+                \item Sampling e in A, which represents the sampling result of $parent$
+                \item Push down $child$
+                \item Because $e \notin A$, so we need to push down $e$ and the collection $U_e$ containing it
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=6cm]{global_img_dir/sp1.png}
+                \caption{Sampling Tree}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Sampling Tree: Sampling in child}
+    \begin{columns}
+        \begin{column}{0.48\textwidth}
+            \begin{itemize}
+                \item Split child into $parent$ and $child$
+                \item Sampling e in A, which represents the sampling result of $parent$
+                \item Push down $child$
+                \item Because $e \notin A$, so we need to push down $e$ and the collection containing it
+                \item if $U_e \subset U$, then add e in this node
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=6cm]{global_img_dir/sp1.png}
+                \caption{Sampling Tree}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Example}
+    \centering
+    \includegraphics[width=12cm]{global_img_dir/exa1.png}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Example}
+    \centering
+    \includegraphics[width=12cm]{global_img_dir/exp2.png}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Sampling Tree: randomly prove}
+    \begin{block}{Basis}
+        1-path: $p(e) = \frac{1}{l}$
     \end{block}
-    \centering
-    \includegraphics[width=4cm]{global_img_dir/SamplingTree2.png}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Sampling Tree: n sets}
-    \begin{block} {Algorithm: parent node}
-        There are two sets: $S_{child}, S_{parent}$.
-        \begin{itemize}
-            \item $p_1 < \frac{n_a}{n_1}, S_{parent} = S_{parent}\cup S_1$\\
-            \dots\dots
-            \item $p_j > \frac{n_{j-1}}{n_j}, S_{child} = S_{child}\cup S_j$
-            \item $p_{j+1} < \frac{n_{j-1}}{n_{j+1}}, S_{parent} = S_{parent}\cup S_{j+1}$
-        \end{itemize}
+    \begin{block}{Induction}
+        Assume for k-path, $p(e) = \frac{1}{l}$\\
+        For (k+1)-path, add a root node: \{$A: l_a$\}. \\
+        Case1: sampling in A
+        $$
+        p(e) = p(A)*\frac{1}{l_a} = \frac{l_a}{l+l_a}*\frac{1}{l_a} = \frac{1}{l+l_a}
+        $$
+        Case2: sampling in subtree
+        $$
+        p(e) = (1-p(A))*\frac{1}{l} = \frac{l}{l+l_a}*\frac{1}{l} = \frac{1}{l+l_a}
+        $$
     \end{block}
-    \centering
-    \includegraphics[width=7cm]{global_img_dir/SamplingTreek.png}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Prove}
-        Basis: For two sets $\{S_1, S_2\}$: 
-        \begin{equation}
-            \begin{aligned}
-                p(e_1) = \frac{1}{|S_1|}, p(e_1) = \frac{1}{|S_2|}\\
-                p(e1=e2) = \frac{1}{max(|S_1|,|S_2|)}
-            \end{aligned}
-        \end{equation}
-        
-        Induction: \\
-        If $\{S_1, S_2, ... S_k\}$ satisfies: 
-        \begin{equation}
-            \begin{aligned}
-                \forall i, p(e_i) &= \frac{1}{|S_i|}\\
-                \forall i,j , p(e_i=e_j) &= \frac{1}{max(|S_i|,|S_j|)}
-            \end{aligned}
-        \end{equation}
-        then $\{S_1, S_2, ... S_k, S_{k+1}\}$ sets is also satisfies
-
-\end{frame}
-
-\begin{frame}
-    \frametitle{Induction}
-    \centering
-    \includegraphics[width=8cm]{global_img_dir/Inser.png}
 \end{frame}
 
 \section{Global DataLoader}
@@ -672,17 +864,18 @@
 \end{frame}
 
 \begin{frame}
-    \frametitle{Server and Loader}
-    \begin{block}{Server}
+    \frametitle{Task Manager and Loader}
+    \begin{block}{Task Manager}
         \begin{itemize}
             \item recieve task <task name, index set> and return head address
-            \item hearbeat
+            \item send hearbeat
         \end{itemize}
     \end{block}
     \begin{block}{Loader}
         \begin{itemize}
-            \item check Buffer Pool2
-            \item if miss, read from disk
+            \item process pool
+            \item read data from disk and decode them 
+            \item write them in buffer pool
         \end{itemize}
     \end{block}
 \end{frame}
@@ -714,21 +907,99 @@
 \end{frame}
 
 \begin{frame}
-    \frametitle{Buffer Pool: Evict}
-    \begin{block} {inode}
-        if used bit is equal to 0, then it can be evited
+    \frametitle{Buffer Pool Manager}
+    \begin{columns}
+        \begin{column}{0.38\textwidth}
+            \begin{itemize}
+                \item BM is responsible for maintaining three tables
+                \item BM is responsible for freeing useless nodes
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.58\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=7cm]{global_img_dir/bm.png}
+                \caption{Sampling Tree}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}
+    \frametitle{which data shound be free}
+    \begin{block} {Expection diff}
+        The difference between \\
+        the number of times data has been quoted and \\
+        the number of times data should be quoted
     \end{block}
-    \begin{block} {data node}
-        if all reference nodes of datanode is unused, then it can be evited to Buffer Pool2
+    \begin{block} {Example}
+        S1 = {1, 2, 3} , S2 = {1, 2} \\
+        The Sampling result is {S1: 3, S2: 2} \\
+        $ExpectionDiff(3) = 1-1 = 0$, \\
+        $ExpectionDiff(2) = 2-1 = 1$ \\
     \end{block}
-    \begin{block} {Buffer Pool 2}
-        LRU
+    \begin{block} {Answer}
+        Choose the smallest Expection diff
     \end{block}
 \end{frame}
 
 \section{Experiment}
 \begin{frame}
-    \frametitle{Experiment}
+    \frametitle{Hit rate Experiment}
+    \begin{block}{Assumption}
+        There are two sets: $S_1, S_2$, and their length is $n_1, n_2$ \\
+        The intersection set of them is $S_i$, whose length is $n_i$ \\
+        $hitrate= \frac{hit}{n_i}$ \\
+        $bufferSize = k$, which means that the buffer can have k datanode, and we ignore the size of the inode
+    \end{block}
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Number of orphans}
+    \begin{columns}
+        \begin{column}{0.48\textwidth}
+            $p(e_1=e_2|e_2\in S_i) = \frac{n_1}{n_2}$ \\
+            Assume $p = \frac{n_1}{n_2}$
+            \begin{equation}
+                \begin{aligned}
+                    N &= \sum_{i=0}^{n_i}{(1-\frac{n_1-i}{n_2-i})} \\
+                      &\geq \sum_{i=0}^{n_1}{(1-\frac{n_1-i}{n_2-i})} \\
+                      &= \sum_{i=0}^{p*n_2}{(1-\frac{p*n_2-i}{n_2-i})}\\
+                      &\approx \int_{i=0}^{p*n_2}{(1-\frac{p*n_2-i}{n_2-i})}\\
+                      &= n_2*(p-1)ln^{1-p}
+                \end{aligned}
+            \end{equation}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=6cm]{global_img_dir/op1.png}
+                \caption{}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Hit rate}
+    \begin{columns}
+        \begin{column}{0.48\textwidth}
+            $buffer\_size = \frac{k}{n_2}$
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=6cm]{global_img_dir/buffer_size.png}
+                \caption{}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Time Experiment}
     \begin{figure}[htbp]
         \centering
         \begin{minipage}[t]{0.48\textwidth}
@@ -742,6 +1013,10 @@
         \caption{time with GlobalDataLoader}
         \end{minipage}
     \end{figure}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Correctness  Experiment}
 \end{frame}
 
 \end{document}
